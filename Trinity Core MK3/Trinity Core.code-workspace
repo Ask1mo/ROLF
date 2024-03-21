@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"name": "Trinity Core",
+			"path": "D:/Projects/Tech - Trinity/Code/Trinity Core"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"algorithm": "cpp",
+			"new": "cpp",
+			"random": "cpp"
+		}
+	}
+}

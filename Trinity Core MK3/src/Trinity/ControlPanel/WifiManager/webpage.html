@@ -1,0 +1,180 @@
+#ifndef INDEX_HTML
+#define INDEX_HTML
+
+
+//============
+//Webpage Code
+//============
+String webpageCode = R"***(
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title> ESP32 Web Server </title>
+
+
+
+
+
+
+
+
+
+
+    <style>
+      body {background-color: rgb(0, 0, 0)}
+      h4 {font-family: Verdana; text-align: center; color: white;}
+      .card
+      {
+         max-width: 450px;
+         min-height: 100px;
+         background: rgb(99, 99, 99);
+         padding: 10px;
+         font-weight: bold;
+         font: 25px calibri;
+         text-align: center;
+         box-sizing: border-box;
+         color: rgb(255, 255, 255);
+         margin:20px;
+         box-shadow: 0px 2px 15px 15px rgba(128, 0, 0, 0.75);
+      }
+    </style>
+
+
+
+
+
+
+
+
+
+
+
+
+  </head>
+  <body>
+      <div class="card">
+        <h1><span style="color:black">Trinity Link</span></h1>
+        <h2>
+          Panel Colour: <span id="POTvalue">Dingus</span>
+        </h2>
+      </div>
+      <h4>
+        <button onclick="help()">Help</button><br><br>
+        <div id="myDIV"> </div>
+      </h4>
+      <canvas id="myCanvas" width="800" height="600" style="border:1px solid #d3d3d3;"></canvas>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <script>
+      var canvas = document.getElementById('myCanvas');
+      var ctx = canvas.getContext('2d');
+      function setCanvasSize(width, height) {
+            var canvas = document.getElementById('myCanvas');
+            canvas.width = width;
+            canvas.height = height;
+        }
+        // Call the function with the desired width and height
+        setCanvasSize({width}, {height});
+        
+      class Triangle {
+        constructor(x, y, size, color, angle) {
+          this.x = x;
+          this.y = y;
+          this.size = size;
+          this.color = color;
+          this.angle = angle;
+        }
+  
+        draw() {
+          ctx.beginPath();
+          ctx.moveTo(this.x, this.y);
+          ctx.lineTo(this.x + this.size * Math.cos(this.angle), this.y + this.size * Math.sin(this.angle));
+          ctx.lineTo(this.x + this.size * Math.cos(this.angle + 2/3*Math.PI), this.y + this.size * Math.sin(this.angle + 2/3*Math.PI));
+          ctx.closePath();
+          ctx.fillStyle = this.color;
+          ctx.fill();
+        }
+      }
+  
+      var triangles = [
+        new Triangle(50, 50, 50, 'hsl(0, 100%, 50%)', 0),
+        new Triangle(150, 50, 50, 'hsl(0, 100%, 50%)', 30),
+        new Triangle(250, 50, 50, 'hsl(0, 100%, 50%)', 100),
+        // Add more triangles as needed
+        ];
+        drawTriangles();
+  
+      function getPOTval()
+      {
+        var POTvalRequest = new XMLHttpRequest();
+        POTvalRequest.onreadystatechange = function() {
+          if(this.readyState == 4 && this.status == 200) {
+            var potValue = parseInt(this.responseText); // Assuming the response text is the POT value
+            var newColor = potToColor(potValue);
+            var newAngle = potToAngle(potValue);
+            for (var i = 0; i < triangles.length; i++) {
+              triangles[i].color = newColor;
+              triangles[i].angle = newAngle;
+            }
+            drawTriangles();
+          }
+        };
+        POTvalRequest.open("GET", "readPOT", true);
+        POTvalRequest.send();
+      }
+
+      // Assuming POT value is in the range 0-1023 (for a 10-bit ADC)
+      function potToColor(potValue) {
+        var hue = (potValue / 1023) * 360; // Map POT value to a hue (0-360)
+        return "hsl(" + hue + ", 100%, 50%)"; // Return HSL color string
+      }
+
+      function potToAngle(potValue) {
+        var angle = (potValue / 1023) * 2 * Math.PI; // Map POT value to an angle (0-2π)
+        return angle;
+      }
+  
+      function drawTriangles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (var i = 0; i < triangles.length; i++) {
+          triangles[i].draw();
+        }
+      }
+  
+      setInterval(getPOTval, 500);
+    </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  </body>
+  </html>
+)***";
+
+#endif
