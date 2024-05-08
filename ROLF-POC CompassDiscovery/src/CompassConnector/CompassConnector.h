@@ -47,7 +47,8 @@ class CompassConnector
     uint8_t neighborDirection;
     uint64_t lineClaimMillis;
     uint8_t *moduleAdress;
-    SoftwareSerial *softwareSerial;
+    SoftwareSerial* softwareSerialTransmit;
+    SoftwareSerial* softwareSerialReceive;
     void claimLine(bool enabled); //High to pull the line down and claim it.
 
  

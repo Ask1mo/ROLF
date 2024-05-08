@@ -33,8 +33,6 @@ void CompassConnector::claimLine(bool enabled)
 }
 bool CompassConnector::checkLineClaimed()
 {
-    Serial.print("Checking line: ");
-    Serial.println(digitalRead(pin));
     return !digitalRead(pin);
 }
 bool CompassConnector::tick()
@@ -48,7 +46,6 @@ bool CompassConnector::tick()
             uint64_t lineClaimMillis = millis();
             while (checkLineClaimed())
             {
-                delay(1);
                 Serial.print(".");
             }
             Serial.println();
@@ -57,14 +54,12 @@ bool CompassConnector::tick()
             if (millis() - lineClaimMillis > PULSELENGTH) //If it was a IDENT message
             {
                 Serial.println(F("!!!IDENT REQUEST RECEIVED!!!"));
-                delay(1000);
                 transmit(NEIGH_ADRESS_MASTER);
                 return false;
             }
             else //If it was a LED Sync pulse
             {
                 Serial.println(F("!!!LED SYNC RECEIVED!!!"));
-                delay(1000);
                 return true;
             }     
         }
@@ -99,7 +94,7 @@ void CompassConnector::connect()
 {
     claimLine(true);
     //lineClaimMillis = millis();
-    delay(60);
+    delay(PULSELENGTH*1.2);
     claimLine(false);
 
     Serial.println(F("Attempting Serial connection"));
@@ -154,7 +149,6 @@ uint8_t CompassConnector::waitAndRead()
     uint8_t timeoutAttempts = 100;
     while (!softwareSerial->available())
     {
-        delay(1);
         Serial.print(".");
         timeoutAttempts--;
         if (timeoutAttempts == 0)
