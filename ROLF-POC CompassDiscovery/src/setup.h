@@ -11,7 +11,7 @@
 /*---=== Setting examples ===---*/
 #define DEBUGLEVEL DEBUG_OPERATIONS
 
-
+#define PULSELENGTH 500
 
 #define PIN_COMPASS_NORTH   2
 #define PIN_COMPASS_EAST    3
