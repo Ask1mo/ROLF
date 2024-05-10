@@ -2,7 +2,7 @@
 #define COMPASSCONNECTOR_H
 
 #include "setup.h"
-#include <SoftwareSerial.h>
+#include "SoftwareSerial.h"
 
 #define BUTTON_RELEASED             0
 #define BUTTON_TAPPED               1

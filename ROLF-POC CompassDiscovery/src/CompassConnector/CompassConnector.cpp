@@ -15,6 +15,8 @@ CompassConnector::CompassConnector(uint8_t pin, uint8_t direction, String textNa
     this->connectionState = NEIGH_CONNECTSTATE_UNKNOWN;
     this->neighborAdress = NEIGH_ADRESS_UNKNOWN;
     this->neighborDirection = DIRECTION_NONE;
+    this->softwareSerialTransmit = new SoftwareSerial(PIN_DEAD, pin);
+    this->softwareSerialReceive = new SoftwareSerial(pin, PIN_DEAD);
 }
 
 void CompassConnector::claimLine(bool enabled)
@@ -72,15 +74,11 @@ void CompassConnector::transmit(uint8_t adress)
     Serial.print(F("Transmitting "));
     Serial.println(textName);
 
-    softwareSerial = new SoftwareSerial(PIN_DEAD, pin);
-    softwareSerial->begin(9600);
-    
-    softwareSerial->write(adress);
-    softwareSerial->write(direction);
-    
-    softwareSerial->end();
+    softwareSerialTransmit->begin(9600);
+    softwareSerialTransmit->write(adress);
+    softwareSerialTransmit->write(direction);
+    softwareSerialTransmit->end();
 
-    delete static_cast<SoftwareSerial*>(softwareSerial);
     claimLine(false); //To make sure the data line returns to HIGH, release it.
 }
 
@@ -143,26 +141,23 @@ bool CompassConnector::readData()
 }
 uint8_t CompassConnector::waitAndRead()
 {
-    softwareSerial = new SoftwareSerial(pin, PIN_DEAD);
-    softwareSerial->begin(9600);
+    softwareSerialReceive->begin(9600);
 
     uint8_t timeoutAttempts = 100;
-    while (!softwareSerial->available())
+    while (!softwareSerialReceive->available())
     {
         Serial.print(".");
         timeoutAttempts--;
         if (timeoutAttempts == 0)
         {
             Serial.println(F("Timeout"));
-            softwareSerial->end();
-            delete static_cast<SoftwareSerial*>(softwareSerial);
+            softwareSerialReceive->end();
             return false;
         }
     }
-    uint8_t readResult = softwareSerial->read();
+    uint8_t readResult = softwareSerialReceive->read();
     Serial.print(F("Read: "));
     Serial.println(readResult);
-    softwareSerial->end();
-    delete static_cast<SoftwareSerial*>(softwareSerial);
+    softwareSerialReceive->end();
     return readResult;
 }

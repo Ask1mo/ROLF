@@ -28,6 +28,7 @@ uint64_t lastdStartFlashMillis = 0;
 void triggerLedSync()
 {
   Serial.println(F("!!!!!!!!!LED Sync triggered!!!!!!!!"));
+  delay(1000);
   connectorManager->sendSyncSignal();
   ledLevel = 255;
 }
@@ -49,8 +50,16 @@ void setup()
   //Connectors setup
   connectorManager = new ConnectorManager(&moduleAdress);
   Serial.println(F("ConnectionManager created"));
+
+  uint32_t *memcheck;
+  memcheck = (uint32_t *)malloc(1000);
+  Serial.print(F("Memory check: "));
+  Serial.println((uint32_t)memcheck);
+  
   connectorManager->connect();
 
+
+  
 
   Serial.println(F("---===Setup done===---"));
 }
