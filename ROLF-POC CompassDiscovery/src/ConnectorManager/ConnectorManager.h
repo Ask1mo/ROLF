@@ -4,6 +4,9 @@
 #include "setup.h"
 #include "CompassConnector/CompassConnector.h"
 
+
+#define IDENTPULSEINTERVAL 1000
+
 class ConnectorManager
 {
     private:
@@ -11,11 +14,14 @@ class ConnectorManager
     CompassConnector *targetConnector;
     bool connectComplete;
 
+    uint64_t lastIdentPulseMillis;
+
+    uint8_t directionsTurn;
+
 
     public:
     ConnectorManager(uint8_t *moduleAdress);
-    bool tick();
-    void connect();
+    void tick();
     void sendSyncSignal();
 };
 

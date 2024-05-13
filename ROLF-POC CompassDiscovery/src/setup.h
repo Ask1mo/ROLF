@@ -28,12 +28,19 @@
 #define PIN_LED             13
 */
 
-#define PIN_COMPASS_NORTH   32
-#define PIN_COMPASS_EAST    33
-#define PIN_COMPASS_SOUTH   25
-#define PIN_COMPASS_WEST    26
-#define PIN_COMPASS_UP      27
-#define PIN_COMPASS_DOWN    14
+#define PIN_IDENT_NORTH   32
+#define PIN_IDENT_EAST    33
+#define PIN_IDENT_SOUTH   25
+#define PIN_IDENT_WEST    26
+#define PIN_IDENT_UP      27
+#define PIN_IDENT_DOWN    14
+
+#define PIN_SYNC_NORTH   19
+#define PIN_SYNC_EAST    23
+#define PIN_SYNC_SOUTH   18
+#define PIN_SYNC_WEST    5
+#define PIN_SYNC_UP      17
+#define PIN_SYNC_DOWN    16
 
 #define PIN_DEAD            12
 #define PIN_BUTTON          13

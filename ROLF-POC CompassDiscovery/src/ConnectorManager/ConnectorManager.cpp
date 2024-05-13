@@ -9,43 +9,42 @@ ConnectorManager::ConnectorManager(uint8_t *moduleAdress)
     }
 
     this->compassConnectors = new CompassConnector*[DIRECTIONS];
-    this->compassConnectors[0] = new CompassConnector(PIN_COMPASS_NORTH, DIRECTION_NORTH,    "North",    moduleAdress);
-    this->compassConnectors[1] = new CompassConnector(PIN_COMPASS_EAST,  DIRECTION_EAST,     "East",     moduleAdress);
-    this->compassConnectors[2] = new CompassConnector(PIN_COMPASS_SOUTH, DIRECTION_SOUTH,    "South",    moduleAdress);
-    this->compassConnectors[3] = new CompassConnector(PIN_COMPASS_WEST,  DIRECTION_WEST,     "West",     moduleAdress);
-    this->compassConnectors[4] = new CompassConnector(PIN_COMPASS_UP,    DIRECTION_UP,       "Up",       moduleAdress);
-    this->compassConnectors[5] = new CompassConnector(PIN_COMPASS_DOWN,  DIRECTION_DOWN,     "Down",     moduleAdress);
+    this->compassConnectors[0] = new CompassConnector(PIN_IDENT_NORTH,  PIN_SYNC_NORTH,   DIRECTION_NORTH,    "North",    moduleAdress);
+    this->compassConnectors[1] = new CompassConnector(PIN_IDENT_EAST,   PIN_SYNC_EAST,    DIRECTION_EAST,     "East",     moduleAdress);
+    this->compassConnectors[2] = new CompassConnector(PIN_IDENT_SOUTH,  PIN_SYNC_SOUTH,   DIRECTION_SOUTH,    "South",    moduleAdress);
+    this->compassConnectors[3] = new CompassConnector(PIN_IDENT_WEST,   PIN_SYNC_WEST,    DIRECTION_WEST,     "West",     moduleAdress);
+    this->compassConnectors[4] = new CompassConnector(PIN_IDENT_UP,     PIN_SYNC_UP,      DIRECTION_UP,       "Up",       moduleAdress);
+    this->compassConnectors[5] = new CompassConnector(PIN_IDENT_DOWN,   PIN_SYNC_DOWN,    DIRECTION_DOWN,     "Down",     moduleAdress);
+    directionsTurn = 0;
 }
 
-bool ConnectorManager::tick() //Listens for pulses and handles them
+void ConnectorManager::tick()
 {
+    uint64_t currentMillis = millis();
+
+    if (currentMillis - lastIdentPulseMillis > PULSELENGTH)
+    {
+        Serial.println(F("Sending Ident pulse"));
+        lastIdentPulseMillis = currentMillis;
+        compassConnectors[directionsTurn]->sendPulse_Ident();
+
+        directionsTurn++;
+        if (directionsTurn >= DIRECTIONS) directionsTurn = 0;
+    }
+
+
     for (int i = 0; i < DIRECTIONS;  i++)
     {
-        if (compassConnectors[i]->tick())
-        {
-            return true; //If a pulse was received, return true to start LED sync
-        }
+        compassConnectors[i]->tick();
     }
-    return false;
 }
 
 
-void ConnectorManager::connect() //Goes though all connectors one by one. Makes sure they are connected.
-{
-    Serial.println(F("Starting Connection Discovery"));
-    for (int i = 0; i < DIRECTIONS; i++)
-    {
-        Serial.print(F("Connecting CompassConnector "));
-        Serial.println(i);
-        compassConnectors[i]->connect();
-    }
-    Serial.println(F("Connection Discovery finished"));
-}
 
 void ConnectorManager::sendSyncSignal() //Sends a sync signal to all connectors
 {
     for (int i = 0; i < DIRECTIONS; i++)
     {
-        compassConnectors[i]->transmit();
+        compassConnectors[i]->sendPulse_Sync();
     }
 }

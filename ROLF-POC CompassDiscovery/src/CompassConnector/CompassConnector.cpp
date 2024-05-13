@@ -1,6 +1,8 @@
 #include "CompassConnector.h"
 
-CompassConnector::CompassConnector(uint8_t pin, uint8_t direction, String textName, uint8_t *moduleAdress)
+
+//Constructor
+CompassConnector::CompassConnector(uint8_t pin_ident, uint8_t pin_sync, uint8_t direction, String textName, uint8_t *moduleAdress)
 {
     if(DEBUGLEVEL >= DEBUG_OPERATIONS)
     {
@@ -8,52 +10,42 @@ CompassConnector::CompassConnector(uint8_t pin, uint8_t direction, String textNa
         Serial.println((int)this, DEC);
     }
 
-    this->pin = pin;
+    this->pin_ident = pin_ident;
+    this->pin_sync = pin_sync;
     this->direction = direction;
     this->textName = textName;
     this->moduleAdress = moduleAdress;
     this->connectionState = NEIGH_CONNECTSTATE_UNKNOWN;
     this->neighborAdress = ADRESS_UNKNOWN;
     this->neighborDirection = DIRECTION_NONE;
-    //this->softwareSerialTransmit = new SoftwareSerial(PIN_DEAD, pin);
-    //this->softwareSerialReceive = new SoftwareSerial(pin, PIN_DEAD);
+    //this->softwareSerialTransmit = new SoftwareSerial(PIN_DEAD, pin_ident);
+    //this->softwareSerialReceive = new SoftwareSerial(pin_ident, PIN_DEAD);
 
     Serial.print(F("CompassConnector created: "));
     Serial.println(*moduleAdress);
 
     serialMode = SERIALMODE_DISABLED;
 
+    pinMode(pin_ident, INPUT);
+    int readResult = analogRead(pin_ident);
+    if (readResult > 3800)
+    {
+        Serial.print(F("HIGH, MASTER DETECTED ON LINE "));
+    }
+    else
+    {
+        Serial.print(F("Pin "));
+        Serial.print(pin_ident);
+        Serial.print(F(" is low: "));
+        Serial.println(readResult);
+    }
+
     claimLine(false);
+
+    pinMode(pin_sync, INPUT_PULLUP);
 }
 
-void CompassConnector::prepareSerial_Read()
-{
-    if (serialMode != SERIALMODE_DISABLED)
-    {
-        softwareSerial->end();
-        delete softwareSerial;
-    }
-    Serial.println(F("Starting Serial for Read"));
-    serialMode = SERIALMODE_READ;
-    softwareSerial = new EspSoftwareSerial::UART();
-    softwareSerial->begin(BAUDRATE_SYSTEM, EspSoftwareSerial::SWSERIAL_8N1, pin, PIN_DEAD, false, 256);
-    Serial.println(F("Serial started"));
-}
-
-void CompassConnector::prepareSerial_Write()
-{
-    if (serialMode != SERIALMODE_DISABLED)
-    {
-        softwareSerial->end();
-        delete softwareSerial;
-    }
-    Serial.println(F("Starting Serial for Write"));
-    serialMode = SERIALMODE_WRITE;
-    softwareSerial = new EspSoftwareSerial::UART();
-    softwareSerial->begin(BAUDRATE_SYSTEM, EspSoftwareSerial::SWSERIAL_8N1, PIN_DEAD, pin, false, 256);
-    Serial.println(F("Serial started"));
-}
-
+//Private
 void CompassConnector::claimLine(bool enabled)
 {
     if (serialMode)
@@ -71,56 +63,51 @@ void CompassConnector::claimLine(bool enabled)
     if (enabled)// Claim line by pulling low
     {   
         Serial.print(F("Claiming Line "));
-        Serial.println(pin);
-        pinMode(pin, OUTPUT);
-        digitalWrite(pin, LOW);
+        Serial.println(pin_ident);
+        pinMode(pin_ident, OUTPUT);
+        digitalWrite(pin_ident, LOW);
     }
     else //Release line back to high
     {
         Serial.print(F("Releasing Line "));
-        Serial.println(pin);
+        Serial.println(pin_ident);
 
-        pinMode(pin, INPUT_PULLUP);
+        pinMode(pin_ident, INPUT_PULLUP);
     }
 
     Serial.println("Line done");
 }
 bool CompassConnector::checkLineClaimed()
 {
-    return !digitalRead(pin);
+    return !digitalRead(pin_ident);
 }
-bool CompassConnector::tick()
+
+void CompassConnector::prepareSerial_Read()
 {
-    if (connectionState == NEIGH_CONNECTSTATE_BLOCKED) return false;
-
-
-        if(checkLineClaimed())
-        {
-            //Check line claim duration
-            uint64_t lineClaimMillis = millis();
-            while (checkLineClaimed())
-            {
-                Serial.print(".");
-            }
-            Serial.println();
-   
-            //Measure pulse length
-            if (millis() - lineClaimMillis > PULSELENGTH) //If it was a IDENT message
-            {
-                Serial.println(F("!!!IDENT REQUEST RECEIVED!!!"));
-                transmit();
-                return false;
-            }
-            else //If it was a LED Sync pulse
-            {
-                Serial.println(F("!!!LED SYNC RECEIVED!!!"));
-                return true;
-            }     
-        }
-    return false;
+    if (serialMode != SERIALMODE_DISABLED)
+    {
+        softwareSerial->end();
+        delete softwareSerial;
+    }
+    Serial.println(F("Starting Serial for Read"));
+    serialMode = SERIALMODE_READ;
+    softwareSerial = new EspSoftwareSerial::UART();
+    softwareSerial->begin(BAUDRATE_SYSTEM, EspSoftwareSerial::SWSERIAL_8N1, pin_ident, PIN_DEAD, false, 256);
+    Serial.println(F("Serial started"));
 }
-
-
+void CompassConnector::prepareSerial_Write()
+{
+    if (serialMode != SERIALMODE_DISABLED)
+    {
+        softwareSerial->end();
+        delete softwareSerial;
+    }
+    Serial.println(F("Starting Serial for Write"));
+    serialMode = SERIALMODE_WRITE;
+    softwareSerial = new EspSoftwareSerial::UART();
+    softwareSerial->begin(BAUDRATE_SYSTEM, EspSoftwareSerial::SWSERIAL_8N1, PIN_DEAD, pin_ident, false, 256);
+    Serial.println(F("Serial started"));
+}
 void CompassConnector::transmit()
 {
     Serial.print(F("Transmitting "));
@@ -130,17 +117,6 @@ void CompassConnector::transmit()
     Serial.print(F(" Direction "));
     Serial.println(direction);
 
-
-    
-
-
-
-    /*
-    softwareSerialTransmit->begin(9600);
-    softwareSerialTransmit->write(adress);
-    softwareSerialTransmit->write(direction);
-    softwareSerialTransmit->end();
-    */
 
     prepareSerial_Write();
 
@@ -163,11 +139,8 @@ void CompassConnector::transmit()
 
     Serial.println(F("Sending data"));
 
-    softwareSerial->write('S'); //Dummy data
-
-    Serial.println(F("Dummy sent"));
-    
     softwareSerial->write(*moduleAdress);
+    delay(100);
     softwareSerial->write(direction);
 
     Serial.println(F("Data sent"));
@@ -176,37 +149,8 @@ void CompassConnector::transmit()
     claimLine(false); //To make sure the data line returns to HIGH, release it.
     Serial.println(F("Line released"));
 }
-
-
-uint8_t CompassConnector::getConnectionState()
-{
-    return connectionState;
-}
-
-void CompassConnector::connect()
-{
-    claimLine(true);
-    //lineClaimMillis = millis();
-    delay(PULSELENGTH*1.2);
-    claimLine(false);
-
-    Serial.println(F("Attempting Serial connection"));
-
-    if (readData())
-    {
-        connectionState = NEIGH_CONNECTSTATE_CONNECTED;
-        Serial.println(F("Connected"));
-    }
-    else
-    {
-        connectionState = NEIGH_CONNECTSTATE_DISCONNECTED;
-        Serial.println(F("No neighbor found"));
-    }
-}
 bool CompassConnector::readData()
 {
-    Serial.println(F("Reading data"));
-
     uint8_t readResult = waitAndRead();
     if(readResult == false)
     {
@@ -239,11 +183,12 @@ uint8_t CompassConnector::waitAndRead()
     //softwareSerialReceive->begin(9600);
     prepareSerial_Read();
 
-    uint8_t timeoutAttempts = 100;
+    uint16_t timeoutAttempts = 1000;
     //while (!softwareSerialReceive->available())
     while (!softwareSerial->available())
     {
         Serial.print(".");
+        delay(1);
         timeoutAttempts--;
         if (timeoutAttempts == 0)
         {
@@ -258,4 +203,43 @@ uint8_t CompassConnector::waitAndRead()
     Serial.println(readResult);
     claimLine(false);
     return readResult;
+}
+
+//Public
+void CompassConnector::tick()
+{
+    if (connectionState == NEIGH_CONNECTSTATE_BLOCKED) return;
+
+    if(checkLineClaimed())
+    {
+        //Check line claim duration
+        uint64_t lineClaimMillis = millis();
+        Serial.println(F("!!!IDENT REQUEST RECEIVED!!!"));
+        
+        if (readData())
+        {
+            connectionState = NEIGH_CONNECTSTATE_CONNECTED;
+            Serial.println(F("Connected"));
+        }
+        else
+        {
+            connectionState = NEIGH_CONNECTSTATE_DISCONNECTED;
+            Serial.println(F("No neighbor found"));
+        }
+    }
+}
+void CompassConnector::sendPulse_Ident()
+{
+    claimLine(true);
+    delay(10);
+    claimLine(false);
+    transmit();
+    Serial.println(F("IDPulse sent"));
+}
+void CompassConnector::sendPulse_Sync()
+{
+    pinMode(pin_sync, OUTPUT);
+    digitalWrite(pin_sync, LOW);
+    delay(PULSELENGTH);
+    pinMode(pin_sync, INPUT_PULLUP);
 }

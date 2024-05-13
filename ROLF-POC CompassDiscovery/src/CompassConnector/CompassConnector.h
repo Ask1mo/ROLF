@@ -39,12 +39,19 @@
 #define SERIALMODE_WRITE    2
 
 
+#define SYNCTIMERMODE_MASTER        0
+#define SYNCTIMERMODE_MASTER 0
+#define SYNCTIMERMODE_SLAVEUNSURE  1
+#define SYNCTIMERMODE_
+
+
 
 
 class CompassConnector
 {
     private:
-    uint8_t pin;
+    uint8_t pin_ident;
+    uint8_t pin_sync;
     uint8_t direction;
     String textName;
     uint8_t connectionState;
@@ -60,22 +67,22 @@ class CompassConnector
     EspSoftwareSerial::UART *softwareSerial;
 
     void claimLine(bool enabled); //High to pull the line down and claim it.
-
- 
-    public:
-    CompassConnector(uint8_t pin, uint8_t direction, String textName, uint8_t *moduleAdress);
+    bool checkLineClaimed();
+    
     void prepareSerial_Read();
     void prepareSerial_Write();
     void transmit();
-    void waitAndReceive();
-    bool checkLineClaimed();
-    bool lineCheckTick();
-    uint8_t getConnectionState();
-    bool tick();
-    void connect();
     bool readData();
     uint8_t waitAndRead();
-    void sendSyncSignal();
+
+    
+
+    public:
+    CompassConnector(uint8_t pin_ident, uint8_t pin_sync, uint8_t direction, String textName, uint8_t *moduleAdress);
+    void tick();
+    void sendPulse_Ident();
+    void sendPulse_Sync();
+    
 };
 
 

@@ -58,12 +58,10 @@ void setup()
   Serial.print(F("Memory check: "));
   Serial.println((uint32_t)memcheck);
   
-  connectorManager->connect();
-
 
   
 
-  Serial.println(F("---===Setup done===---"));
+  Serial.println(F("---===Setup done===---"));  
 }
 
 void loop()
@@ -78,5 +76,5 @@ void loop()
   }
 
   //Connector comms
-  if(connectorManager->tick()) triggerLedSync();
+  connectorManager->tick();
 }
