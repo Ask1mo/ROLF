@@ -38,10 +38,10 @@ void setup()
   Serial.begin(BAUDRATE_MONITOR);
   Serial.println(F("---===Setup started===---"));
 
-  button = new AskButton(PIN_BUTTON, 1000);
+  button = new AskButton(0, 1000);
 
   //Get new module adress. Can't be 0 or 1
-  while (moduleAdress <= 1) moduleAdress = analogRead(A0)/4; //0-1023 to 0-255
+  while (moduleAdress <= 1) moduleAdress = (uint8_t)esp_random(); //0-4096 to 0-255
   Serial.print(F("Module adress: "));
   Serial.println(moduleAdress);
   

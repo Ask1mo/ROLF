@@ -46,7 +46,6 @@
 
 
 
-
 class CompassConnector
 {
     private:
@@ -68,12 +67,13 @@ class CompassConnector
 
     void claimLine(bool enabled); //High to pull the line down and claim it.
     bool checkLineClaimed();
-    
+
     void prepareSerial_Read();
     void prepareSerial_Write();
     void transmit();
     bool readData();
     uint8_t waitAndRead();
+    String directionToString(uint8_t compassDirection);
 
     
 
