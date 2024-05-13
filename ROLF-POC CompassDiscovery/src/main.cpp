@@ -3,7 +3,7 @@
 #include "Askbutton/AskButton.h"
 #include "connectorManager/ConnectorManager.h"
 
-uint8_t moduleAdress = 0x01;
+uint8_t moduleAdress = 0;
 
 ConnectorManager *connectorManager;
 
@@ -13,7 +13,7 @@ uint8_t discoveryMode;
 
 uint8_t compassRequestDirection = 0;
 
-uint8_t ledLevel = 0;
+uint8_t ledLevel = 255;
 
 uint64_t currentMillis = 0;
 
@@ -35,13 +35,15 @@ void triggerLedSync()
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(BAUDRATE_MONITOR);
   Serial.println(F("---===Setup started===---"));
 
   button = new AskButton(PIN_BUTTON, 1000);
 
   //Get new module adress. Can't be 0 or 1
-  while (moduleAdress < 1) moduleAdress = analogRead(A0)/4; //0-1023 to 0-255
+  while (moduleAdress <= 1) moduleAdress = analogRead(A0)/4; //0-1023 to 0-255
+  Serial.print(F("Module adress: "));
+  Serial.println(moduleAdress);
   
   //Prepare fake LEDS
   pinMode(PIN_LED, OUTPUT);
@@ -71,6 +73,8 @@ void loop()
   {
     ledLevel--;
     analogWrite(PIN_LED, ledLevel);
+    Serial.print(F("LED Level: "));
+    Serial.println(ledLevel); 
   }
 
   //Connector comms

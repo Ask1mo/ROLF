@@ -20,8 +20,7 @@
 #define LINESTATE_CLAIMED_LEDS  2
 #define LINESTATE_CLAIMED_IDENT 3
 
-#define NEIGH_ADRESS_UNKNOWN 0
-#define NEIGH_ADRESS_MASTER  1
+#define ADRESS_UNKNOWN 0
 
 #define DIRECTIONS 6
 #define DIRECTION_NONE  0
@@ -35,6 +34,12 @@
 #define CONNECTOR_COMMAND_IDENT     1
 #define CONNECTOR_COMMAND_LEDSYNC   2
 
+#define SERIALMODE_DISABLED 0
+#define SERIALMODE_READ     1
+#define SERIALMODE_WRITE    2
+
+
+
 
 class CompassConnector
 {
@@ -47,14 +52,21 @@ class CompassConnector
     uint8_t neighborDirection;
     uint64_t lineClaimMillis;
     uint8_t *moduleAdress;
-    SoftwareSerial* softwareSerialTransmit;
-    SoftwareSerial* softwareSerialReceive;
+    bool serialMode;
+
+    //SoftwareSerial* softwareSerialTransmit;
+    //SoftwareSerial* softwareSerialReceive;
+
+    EspSoftwareSerial::UART *softwareSerial;
+
     void claimLine(bool enabled); //High to pull the line down and claim it.
 
  
     public:
     CompassConnector(uint8_t pin, uint8_t direction, String textName, uint8_t *moduleAdress);
-    void transmit(uint8_t adress);
+    void prepareSerial_Read();
+    void prepareSerial_Write();
+    void transmit();
     void waitAndReceive();
     bool checkLineClaimed();
     bool lineCheckTick();

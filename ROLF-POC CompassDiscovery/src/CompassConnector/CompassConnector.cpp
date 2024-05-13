@@ -13,25 +13,77 @@ CompassConnector::CompassConnector(uint8_t pin, uint8_t direction, String textNa
     this->textName = textName;
     this->moduleAdress = moduleAdress;
     this->connectionState = NEIGH_CONNECTSTATE_UNKNOWN;
-    this->neighborAdress = NEIGH_ADRESS_UNKNOWN;
+    this->neighborAdress = ADRESS_UNKNOWN;
     this->neighborDirection = DIRECTION_NONE;
-    this->softwareSerialTransmit = new SoftwareSerial(PIN_DEAD, pin);
-    this->softwareSerialReceive = new SoftwareSerial(pin, PIN_DEAD);
+    //this->softwareSerialTransmit = new SoftwareSerial(PIN_DEAD, pin);
+    //this->softwareSerialReceive = new SoftwareSerial(pin, PIN_DEAD);
+
+    Serial.print(F("CompassConnector created: "));
+    Serial.println(*moduleAdress);
+
+    serialMode = SERIALMODE_DISABLED;
+
+    claimLine(false);
+}
+
+void CompassConnector::prepareSerial_Read()
+{
+    if (serialMode != SERIALMODE_DISABLED)
+    {
+        softwareSerial->end();
+        delete softwareSerial;
+    }
+    Serial.println(F("Starting Serial for Read"));
+    serialMode = SERIALMODE_READ;
+    softwareSerial = new EspSoftwareSerial::UART();
+    softwareSerial->begin(BAUDRATE_SYSTEM, EspSoftwareSerial::SWSERIAL_8N1, pin, PIN_DEAD, false, 256);
+    Serial.println(F("Serial started"));
+}
+
+void CompassConnector::prepareSerial_Write()
+{
+    if (serialMode != SERIALMODE_DISABLED)
+    {
+        softwareSerial->end();
+        delete softwareSerial;
+    }
+    Serial.println(F("Starting Serial for Write"));
+    serialMode = SERIALMODE_WRITE;
+    softwareSerial = new EspSoftwareSerial::UART();
+    softwareSerial->begin(BAUDRATE_SYSTEM, EspSoftwareSerial::SWSERIAL_8N1, PIN_DEAD, pin, false, 256);
+    Serial.println(F("Serial started"));
 }
 
 void CompassConnector::claimLine(bool enabled)
 {
+    if (serialMode)
+    {
+        Serial.println(F("Ending Serial"));
+        softwareSerial->end();
+        delete softwareSerial;
+        serialMode = SERIALMODE_DISABLED;
+    }
+    else
+    {
+        Serial.println(F("Serial not active"));
+    }
+
     if (enabled)// Claim line by pulling low
     {   
-        Serial.println("Line Claimed");
+        Serial.print(F("Claiming Line "));
+        Serial.println(pin);
         pinMode(pin, OUTPUT);
         digitalWrite(pin, LOW);
     }
     else //Release line back to high
     {
+        Serial.print(F("Releasing Line "));
+        Serial.println(pin);
+
         pinMode(pin, INPUT_PULLUP);
-        Serial.println("Line Released");
     }
+
+    Serial.println("Line done");
 }
 bool CompassConnector::checkLineClaimed()
 {
@@ -56,7 +108,7 @@ bool CompassConnector::tick()
             if (millis() - lineClaimMillis > PULSELENGTH) //If it was a IDENT message
             {
                 Serial.println(F("!!!IDENT REQUEST RECEIVED!!!"));
-                transmit(NEIGH_ADRESS_MASTER);
+                transmit();
                 return false;
             }
             else //If it was a LED Sync pulse
@@ -69,17 +121,60 @@ bool CompassConnector::tick()
 }
 
 
-void CompassConnector::transmit(uint8_t adress)
+void CompassConnector::transmit()
 {
     Serial.print(F("Transmitting "));
-    Serial.println(textName);
+    Serial.print(textName);
+    Serial.print(F(": Adress "));
+    Serial.print(*moduleAdress);
+    Serial.print(F(" Direction "));
+    Serial.println(direction);
 
+
+    
+
+
+
+    /*
     softwareSerialTransmit->begin(9600);
     softwareSerialTransmit->write(adress);
     softwareSerialTransmit->write(direction);
     softwareSerialTransmit->end();
+    */
+
+    prepareSerial_Write();
+
+    if(moduleAdress == nullptr)
+    {
+        Serial.println(F("!!!!!!!!!!!!!!!No module adress!!!!!!!!!!!!!!!"));
+        return;
+    }
+    else
+    {
+        Serial.print(F("Module adress: "));
+        Serial.println(*moduleAdress);
+    }
+
+    if(&softwareSerial == nullptr) {
+    Serial.println(F("softwareSerial is null"));
+    } else {
+        Serial.println(F("softwareSerial is Initialised"));
+    }
+
+    Serial.println(F("Sending data"));
+
+    softwareSerial->write('S'); //Dummy data
+
+    Serial.println(F("Dummy sent"));
+    
+    softwareSerial->write(*moduleAdress);
+    softwareSerial->write(direction);
+
+    Serial.println(F("Data sent"));
+
 
     claimLine(false); //To make sure the data line returns to HIGH, release it.
+    Serial.println(F("Line released"));
 }
 
 
@@ -115,7 +210,7 @@ bool CompassConnector::readData()
     uint8_t readResult = waitAndRead();
     if(readResult == false)
     {
-        neighborAdress = NEIGH_ADRESS_UNKNOWN;
+        neighborAdress = ADRESS_UNKNOWN;
         neighborDirection = DIRECTION_NONE;
         return false;
     }
@@ -125,7 +220,7 @@ bool CompassConnector::readData()
     readResult = waitAndRead();
     if(readResult == false)
     {
-        neighborAdress = NEIGH_ADRESS_UNKNOWN;
+        neighborAdress = ADRESS_UNKNOWN;
         neighborDirection = DIRECTION_NONE;
         return false;
     }
@@ -141,23 +236,26 @@ bool CompassConnector::readData()
 }
 uint8_t CompassConnector::waitAndRead()
 {
-    softwareSerialReceive->begin(9600);
+    //softwareSerialReceive->begin(9600);
+    prepareSerial_Read();
 
     uint8_t timeoutAttempts = 100;
-    while (!softwareSerialReceive->available())
+    //while (!softwareSerialReceive->available())
+    while (!softwareSerial->available())
     {
         Serial.print(".");
         timeoutAttempts--;
         if (timeoutAttempts == 0)
         {
             Serial.println(F("Timeout"));
-            softwareSerialReceive->end();
+            claimLine(false);
             return false;
         }
     }
-    uint8_t readResult = softwareSerialReceive->read();
+    //uint8_t readResult = softwareSerialReceive->read();
+    uint8_t readResult = softwareSerial->read();
     Serial.print(F("Read: "));
     Serial.println(readResult);
-    softwareSerialReceive->end();
+    claimLine(false);
     return readResult;
 }

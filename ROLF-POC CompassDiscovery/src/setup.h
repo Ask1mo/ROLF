@@ -13,6 +13,10 @@
 
 #define PULSELENGTH 1000
 
+#define BAUDRATE_MONITOR 115200
+#define BAUDRATE_SYSTEM 9600
+
+/*
 #define PIN_COMPASS_NORTH   2
 #define PIN_COMPASS_EAST    3
 #define PIN_COMPASS_SOUTH   4
@@ -22,6 +26,18 @@
 #define PIN_DEAD            11
 #define PIN_BUTTON          12
 #define PIN_LED             13
+*/
+
+#define PIN_COMPASS_NORTH   32
+#define PIN_COMPASS_EAST    33
+#define PIN_COMPASS_SOUTH   25
+#define PIN_COMPASS_WEST    26
+#define PIN_COMPASS_UP      27
+#define PIN_COMPASS_DOWN    14
+
+#define PIN_DEAD            12
+#define PIN_BUTTON          13
+#define PIN_LED             22
 
 
 #endif
