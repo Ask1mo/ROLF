@@ -11,9 +11,19 @@
 /*---=== Setting examples ===---*/
 #define DEBUGLEVEL DEBUG_OPERATIONS
 
+
+#define SSID "GLOWII"
+#define PASSWORD "AskimoGlow"
+#define SERVER_IP "192.168.137.6"
+#define SERVER_UDPPORT 4210  // local port to listen on
+
+
 #define PULSELENGTH_ID 5
 #define PULSELENGTH_SYNC 5
 #define INTERVALLENGTH 1000
+#define STARTFLASH_DURATION 1000
+#define TIMEOUTATTEMPTS 10
+
 
 #define BAUDRATE_MONITOR 115200
 #define BAUDRATE_SYSTEM 9600
