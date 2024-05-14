@@ -23,12 +23,15 @@ class ConnectedModule
 {
     private:
     String macAdress;
+    String ipAdress;
     uint8_t moduleID;
     uint8_t shape;
     NeighborModule **neighborModules;
 
     public:
-    ConnectedModule(String macAdress, uint8_t moduleID, uint8_t shape);
+    ConnectedModule(String macAdress, String ipAdress , uint8_t moduleID, uint8_t shape);
+    String getMacAdress();
+    String getIpAdress();
 };
 
 

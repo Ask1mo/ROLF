@@ -1,12 +1,29 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <WiFiUdp.h>
 
 #define TIMEOUTATTEMPTS 10
+
+
+// Replace with your network credentials
+const char* ssid = "GLOWII";
+const char* password = "AskimoGlow";
+
+WiFiUDP Udp;
+#define SERVER_IP "192.168.137.199"
+#define SERVER_UDPPORT 4210  // local port to listen on
+
+void sendUDP(String message)
+{
+  Udp.beginPacket(SERVER_IP, SERVER_UDPPORT);
+  Udp.write((uint8_t *)message.c_str(), message.length());
+  Udp.endPacket();
+}
 
 void connectToWiFi()
 {
   uint8_t attempts = 0;
-  WiFi.begin("Controller", "password");
+  WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED)
   {
     if (attempts++ > TIMEOUTATTEMPTS)
@@ -15,28 +32,28 @@ void connectToWiFi()
       ESP.restart();
     }
     delay(1000);
-    Serial.print("Attempting connection (");
+    Serial.print("Attempting connection to ");
+    Serial.print(ssid);
+    Serial.print(" (");
     Serial.print(attempts);
     Serial.print("/");
     Serial.print(TIMEOUTATTEMPTS);
     Serial.println(")");
   }
+  Serial.println("Connected to WiFi");
+  // Start UDP
+  Udp.begin(SERVER_UDPPORT);
 
-  // Connect to the server
-  WiFiClient client;
-  if (!client.connect(WiFi.gatewayIP(), 80))
-  {
-    Serial.println("Connection to server failed");
-    ESP.restart();
-  }
+  // Send a message to the server
+  String identMessage = "Hello: " + WiFi.macAddress();
+  sendUDP(identMessage);
 }
+
 
 void setup() {
   Serial.begin(115200);
   connectToWiFi();
 }
-
-
 
 void loop()
 {
@@ -47,30 +64,17 @@ void loop()
     connectToWiFi();
   }
 
-  // Check if the server is available
-  WiFiClient client;
-  if (client.connect(WiFi.gatewayIP(), 80))
+  // Check if there are any UDP packets available
+  int packetSize = Udp.parsePacket();
+  if (packetSize)
   {
-    // Wait for the server to send a message
-    while (client.available() == 0) {
-      delay(1);
-      Serial.print(".");
-    }
+    // Read the packet into packetBuffer
+    char packetBuffer[255];
+    int len = Udp.read(packetBuffer, 255);
+    if (len > 0) packetBuffer[len] = 0;
 
-    // Read the server's message
-    String message = client.readStringUntil('\n');
-    Serial.println("Received message from server: " + message);
-
-    // If the server asked for the MAC address, send it
-    if (message.startsWith("Hello, client! Please send your MAC address."))
-    {
-      String macAddress = WiFi.macAddress();
-      client.println(macAddress);
-      Serial.println("Sent MAC address to server: " + macAddress);
-    }
-
-    client.stop();
+    // Print the packet
+    Serial.println("Received packet from server: ");
+    Serial.println(packetBuffer);
   }
-
-  delay(1000);
 }
