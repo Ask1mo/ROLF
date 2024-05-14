@@ -22,7 +22,10 @@
 #define PULSELENGTH_SYNC 5
 #define INTERVALLENGTH 1000
 #define STARTFLASH_DURATION 1000
+#define INTERVAL_SESSIONCHECK 10000
+
 #define TIMEOUTATTEMPTS 10
+
 
 
 #define BAUDRATE_MONITOR 115200
@@ -57,6 +60,18 @@
 #define PIN_DEAD            12
 #define PIN_BUTTON          13
 #define PIN_LED             22
+
+
+
+#define MESSAGE_CLCO_NEWCLIENT          "NewCl"
+#define MESSAGE_COCL_IDASSIGNMENT       "IDAss"
+#define MESSAGE_CLCO_CONNECTIONCHANGED  "ConCh"
+#define MESSAGE_COCL_UPDATEREQUEST      "UpReq"
+#define MESSAGE_COCL_NEWEFFECT          "NewFX"
+#define MESSAGE_DUPL_SESSIONCHECK       "SeChk"
+#define UDPCODE_NONE                0
+#define UDPCODE_NEWID               1
+#define UDPCODE_SOMETHINGELSE       2
 
 
 #endif

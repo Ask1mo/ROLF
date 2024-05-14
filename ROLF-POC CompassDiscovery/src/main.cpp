@@ -6,34 +6,81 @@
 #include "connectorManager/ConnectorManager.h"
 
 
-
+WiFiUDP udp;
+ConnectorManager *connectorManager;
 
 uint8_t moduleAdress = 0;
-ConnectorManager *connectorManager;
-AskButton *button;
-uint8_t discoveryMode;
-uint8_t compassRequestDirection = 0;
-uint8_t ledLevel = 255;
-uint64_t currentMillis = 0;
-bool startFlashRegistered = false;
-uint64_t lastdStartFlashMillis = 0;
-WiFiUDP Udp;
+uint8_t sessionID = 0;
 
-void triggerLedSync()
+uint64_t currentMillis = 0;
+uint64_t lastMillis_SessionCheck = 0;
+
+
+
+
+#define SYSTEMSTATE_CONNECTING_WIFI       0
+#define SYSTEMSTATE_CONNECTING_CONTROLLER 1
+#define SYSTEMSTATE_CONNECTED             2
+
+void reboot(String message)
 {
-  Serial.println(F("!!!!!!!!!LED Sync triggered!!!!!!!!"));
-  delay(1000);
-  connectorManager->sendSyncSignal();
-  ledLevel = 255;
+  Serial.println(F("Rebooting..."));
+  ESP.restart();
 }
-void sendUDP(String message)
+
+void    udp_transmit(String message)
 {
-  Udp.beginPacket(SERVER_IP, SERVER_UDPPORT);
-  Udp.write((uint8_t *)message.c_str(), message.length());
-  Udp.endPacket();
+  udp.beginPacket(SERVER_IP, SERVER_UDPPORT);
+  udp.write((uint8_t *)message.c_str(), message.length());
+  udp.endPacket();
 }
-void connectToWiFi()
+void    udp_receive()
 {
+  //Message Receiving
+  if (udp.parsePacket())
+  { 
+    char incomingPacket[255];
+    int len = udp.read(incomingPacket, 255);
+    if (len > 0) incomingPacket[len] = 0;
+    //Serial.printf("UDP RECEIVED:  %s\n", incomingPacket);
+
+
+    //Message handling
+    String message = String(incomingPacket);
+    message.trim();
+
+    if (message.startsWith(MESSAGE_COCL_IDASSIGNMENT))
+    {
+      moduleAdress = message.substring(strlen(MESSAGE_COCL_IDASSIGNMENT)).toInt();
+      Serial.println("New ID received: " );
+      Serial.println(moduleAdress);
+    }
+  
+    if (message.startsWith(MESSAGE_COCL_UPDATEREQUEST))
+    {
+      Serial.println("Update requested, not implemented");
+    }
+
+    if (message.startsWith(MESSAGE_COCL_NEWEFFECT))
+    {
+      Serial.println("New effect received, not implemented");
+    }
+
+    if (message.startsWith(MESSAGE_DUPL_SESSIONCHECK))
+    {
+      uint8_t newSessionID = (uint8_t)message.substring(strlen(MESSAGE_DUPL_SESSIONCHECK)).toInt();
+      Serial.print("Parsed session: ");
+      Serial.println(newSessionID);
+
+      if (sessionID == 0) sessionID = newSessionID;
+      else if (sessionID != newSessionID) reboot("Session changed. Restarting...");
+    }
+  }
+}
+void    udp_connect()
+{
+  Serial.println("(Re)Connecting to WiFi");
+
   uint8_t attempts = 0;
   WiFi.begin(SSID, PASSWORD);
   while (WiFi.status() != WL_CONNECTED)
@@ -52,82 +99,44 @@ void connectToWiFi()
     Serial.print(TIMEOUTATTEMPTS);
     Serial.println(")");
   }
-  Serial.println("Connected to WiFi");
-  // Start UDP
-  Udp.begin(SERVER_UDPPORT);
+  Serial.println("WiFi Connected");
 
-  // Send a message to the server
-  String identMessage = "Hello: " + WiFi.macAddress();
-  sendUDP(identMessage);
+
+  udp.begin(SERVER_UDPPORT);
+  String identMessage = MESSAGE_CLCO_NEWCLIENT + WiFi.macAddress();
+  udp_transmit(identMessage);
+
+  while (moduleAdress == 0 || sessionID == 0) udp_receive();
 }
+void    udp_tick()
+{
+  // Check if the WiFi is still connected, if not, reconnect
+  if (WiFi.status() != WL_CONNECTED) udp_connect();
 
-
+  udp_receive();
+}
 
 void setup()
 {
   Serial.begin(BAUDRATE_MONITOR);
   Serial.println(F("---===Setup started===---"));
 
-  connectToWiFi();
+  udp_connect();
 
-  button = new AskButton(0, 1000);
-
-  //Get new module adress. Can't be 0 or 1
-  while (moduleAdress <= 1) moduleAdress = (uint8_t)esp_random(); //0-4096 to 0-255
-  Serial.print(F("Module adress: "));
-  Serial.println(moduleAdress);
-  
-  //Prepare fake LEDS
-  pinMode(PIN_LED, OUTPUT);
-  Serial.println(F("Leds started"));
-
-  //Connectors setup
   connectorManager = new ConnectorManager(&moduleAdress);
-  Serial.println(F("ConnectionManager created"));
-
-  uint32_t *memcheck;
-  memcheck = (uint32_t *)malloc(1000);
-  Serial.print(F("Memory check: "));
-  Serial.println((uint32_t)memcheck);
-  
-
-  
 
   Serial.println(F("---===Setup done===---"));  
 }
-
 void loop()
 {
-  //LED controls
-  if (ledLevel > 0)
+  currentMillis = millis();
+
+  if (currentMillis - lastMillis_SessionCheck > INTERVAL_SESSIONCHECK)
   {
-    ledLevel--;
-    analogWrite(PIN_LED, ledLevel);
-    Serial.print(F("LED Level: "));
-    Serial.println(ledLevel); 
+    lastMillis_SessionCheck = currentMillis;
+    udp_transmit(MESSAGE_DUPL_SESSIONCHECK+sessionID);
   }
 
-  //Connector comms
   connectorManager->tick();
-
-  // Check if the WiFi is still connected
-  if (WiFi.status() != WL_CONNECTED)
-  {
-    Serial.println("WiFi connection lost. Reconnecting...");
-    connectToWiFi();
-  }
-
-  // Check if there are any UDP packets available
-  int packetSize = Udp.parsePacket();
-  if (packetSize)
-  {
-    // Read the packet into packetBuffer
-    char packetBuffer[255];
-    int len = Udp.read(packetBuffer, 255);
-    if (len > 0) packetBuffer[len] = 0;
-
-    // Print the packet
-    Serial.println("Received packet from server: ");
-    Serial.println(packetBuffer);
-  }
+  udp_tick();
 }

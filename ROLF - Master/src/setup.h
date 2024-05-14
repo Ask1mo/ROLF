@@ -14,9 +14,14 @@
 #define PULSELENGTH_ID 5
 #define PULSELENGTH_SYNC 5
 #define INTERVALLENGTH 1000
+#define INTERVAL_MODULECHANGESCAN 10000
 
 #define BAUDRATE_MONITOR 115200
 #define BAUDRATE_SYSTEM 9600
+
+#define SSID "GLOWII"
+#define PASSWORD "AskimoGlow"
+#define SERVER_UDPPORT 4210  // local port to listen on
 
 /*
 #define PIN_COMPASS_NORTH   2
@@ -47,6 +52,18 @@
 #define PIN_DEAD            12
 #define PIN_BUTTON          13
 #define PIN_LED             22
+
+
+
+#define MESSAGE_CLCO_NEWCLIENT          "NewCl"
+#define MESSAGE_COCL_IDASSIGNMENT       "IDAss"
+
+#define MESSAGE_CLCO_CONNECTIONCHANGED  "ConCh"
+#define MESSAGE_COCL_UPDATEREQUEST      "UpReq"
+
+#define MESSAGE_COCL_NEWEFFECT          "NewFX"
+
+#define MESSAGE_DUPL_SESSIONCHECK       "SeChk"
 
 
 #endif

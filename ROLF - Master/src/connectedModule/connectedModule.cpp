@@ -15,6 +15,16 @@ ConnectedModule::ConnectedModule(String macAdress, String ipAdress, uint8_t modu
     }
 }
 
+void ConnectedModule::updateIpAdress(String ipAdress)
+{
+    this->ipAdress = ipAdress;
+}
+
+uint8_t ConnectedModule::getModuleID()
+{
+    return this->moduleID;
+}
+
 String ConnectedModule::getMacAdress()
 {
     return this->macAdress;

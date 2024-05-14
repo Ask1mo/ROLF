@@ -30,6 +30,8 @@ class ConnectedModule
 
     public:
     ConnectedModule(String macAdress, String ipAdress , uint8_t moduleID, uint8_t shape);
+    void updateIpAdress(String ipAdress);
+    uint8_t getModuleID();
     String getMacAdress();
     String getIpAdress();
 };
