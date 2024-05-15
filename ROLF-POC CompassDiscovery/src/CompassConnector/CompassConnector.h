@@ -1,6 +1,7 @@
 #ifndef COMPASSCONNECTOR_H
 #define COMPASSCONNECTOR_H
 
+#include <vector>
 #include "setup.h"
 #include "SoftwareSerial.h"
 
@@ -52,14 +53,13 @@ class CompassConnector
     uint8_t pin_ident;
     uint8_t pin_sync;
     uint8_t direction;
-    String textName;
     uint8_t connectionState;
     uint8_t neighborAdress;
     uint8_t neighborDirection;
     uint64_t lineClaimMillis;
     uint8_t *moduleAdress;
     bool serialMode;
-    String updateCode;
+    std::vector<String> updateCodes;
     uint64_t lastMillis_SyncPulse;
 
     //SoftwareSerial* softwareSerialTransmit;
@@ -82,12 +82,15 @@ class CompassConnector
     
 
     public:
-    CompassConnector(uint8_t pin_ident, uint8_t pin_sync, uint8_t direction, String textName, uint8_t *moduleAdress);
+    CompassConnector(uint8_t pin_ident, uint8_t pin_sync, uint8_t direction, uint8_t *moduleAdress);
     void tick();
     void sendPulse_Ident();
     void sendPulse_Sync();
     String getUpdateCode();
     void printConnector();
+    void forgetNeighbor();
+    uint64_t getLastPulseTime();
+    uint8_t getNeighborAdress();
     
 };
 

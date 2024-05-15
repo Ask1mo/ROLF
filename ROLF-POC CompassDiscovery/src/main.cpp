@@ -141,11 +141,16 @@ void loop()
 {
   currentMillis = millis();
 
+  /*
   if (currentMillis - lastMillis_SessionCheck > INTERVAL_SESSIONCHECK)
   {
     lastMillis_SessionCheck = currentMillis;
     udp_transmit(MESSAGE_DUPL_SESSIONCHECK+String(sessionID));
   }
+  */
+
+  String updateCode = connectorManager->getUpdateCode();
+  if (updateCode != "") udp_transmit(MESSAGE_CLCO_CONNECTIONCHANGED+updateCode);
 
   connectorManager->tick();
   udp_tick();
