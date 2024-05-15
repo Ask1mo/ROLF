@@ -4,6 +4,8 @@
 #include <WiFiUdp.h>
 #include "Askbutton/AskButton.h"
 #include "connectorManager/ConnectorManager.h"
+#include "setup.h"
+
 
 
 WiFiUDP udp;
@@ -15,12 +17,24 @@ uint8_t sessionID = 0;
 uint64_t currentMillis = 0;
 uint64_t lastMillis_SessionCheck = 0;
 
-
+#define PULSELENGTH_ID 5
+#define INTERVAL_SESSIONCHECK 60000         // 1 minute
 
 
 #define SYSTEMSTATE_CONNECTING_WIFI       0
 #define SYSTEMSTATE_CONNECTING_CONTROLLER 1
 #define SYSTEMSTATE_CONNECTED             2
+
+#define TIMEOUTATTEMPTS 10
+
+#define MESSAGE_CLCO_NEWCLIENT          "NewCl"
+#define MESSAGE_COCL_IDASSIGNMENT       "IDAss"
+#define MESSAGE_CLCO_CONNECTIONCHANGED  "ConCh"
+#define MESSAGE_COCL_UPDATEREQUEST      "UpReq"
+#define MESSAGE_COCL_NEWEFFECT          "NewFX"
+#define MESSAGE_DUPL_SESSIONCHECK       "SeChk"
+
+
 
 void reboot(String message)
 {

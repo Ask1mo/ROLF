@@ -5,13 +5,13 @@
 #include "CompassConnector/CompassConnector.h"
 
 
-#define IDENTPULSEINTERVAL 1000
+#define INTERVAL_SYNCPULSE 1000             // 1 second
+
 
 class ConnectorManager
 {
     private:
     CompassConnector **compassConnectors;
-    CompassConnector *targetConnector;
     bool connectComplete;
 
     uint64_t lastIdentPulseMillis;
@@ -25,6 +25,8 @@ class ConnectorManager
     void sendSyncSignal();
     String getUpdateCode();
     void printConnectors();
+    void addLedPipe(uint8_t direction, uint8_t basePipeType);
+    void begin();
 };
 
 

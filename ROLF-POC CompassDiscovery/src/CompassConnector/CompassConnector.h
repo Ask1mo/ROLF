@@ -4,22 +4,13 @@
 #include <vector>
 #include "setup.h"
 #include "SoftwareSerial.h"
-
-#define BUTTON_RELEASED             0
-#define BUTTON_TAPPED               1
-#define BUTTON_HELD                 2
-#define BUTTON_ERROR                3 
-#define BUTTON_PRESSSTATE_HIGH      1 //This one is only for getPressState()
+#include "pipePieces.h"
 
 #define NEIGH_CONNECTSTATE_UNKNOWN              0
 #define NEIGH_CONNECTSTATE_DISCONNECTED         1
 #define NEIGH_CONNECTSTATE_CONNECTED            2
 #define NEIGH_CONNECTSTATE_BLOCKED              3
 
-#define LINESTATE_CLEAR         0
-#define LINESTATE_CLAIMED       1
-#define LINESTATE_CLAIMED_LEDS  2
-#define LINESTATE_CLAIMED_IDENT 3
 
 #define ADRESS_UNKNOWN 0
 
@@ -39,12 +30,8 @@
 #define SERIALMODE_READ     1
 #define SERIALMODE_WRITE    2
 
-
-#define SYNCTIMERMODE_MASTER        0
-#define SYNCTIMERMODE_MASTER 0
-#define SYNCTIMERMODE_SLAVEUNSURE  1
-#define SYNCTIMERMODE_
-
+#define PULSELENGTH_SYNC 5
+#define INTERVAL_SYNCPULSE_MAXABSENCE 10000 // 10 seconds
 
 
 class CompassConnector
