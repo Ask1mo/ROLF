@@ -14,6 +14,10 @@ ConnectedModule::ConnectedModule(String macAdress, String ipAdress, uint8_t modu
         this->neighborModules[i] = NULL;
     }
 }
+void ConnectedModule::setIpAdress(String ipAdress)
+{
+    this->ipAdress = ipAdress;
+}
 
 void ConnectedModule::updateIpAdress(String ipAdress)
 {

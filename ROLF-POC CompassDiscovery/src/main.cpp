@@ -24,12 +24,15 @@ uint64_t lastMillis_SessionCheck = 0;
 
 void reboot(String message)
 {
-  Serial.println(F("Rebooting..."));
+  Serial.print(F("MANUAL REBOOT: "));
+  Serial.println(message);
   ESP.restart();
 }
 
 void    udp_transmit(String message)
 {
+  Serial.print(F("UDP TRANSMIT: "));
+  Serial.println(message);
   udp.beginPacket(SERVER_IP, SERVER_UDPPORT);
   udp.write((uint8_t *)message.c_str(), message.length());
   udp.endPacket();
@@ -106,7 +109,14 @@ void    udp_connect()
   String identMessage = MESSAGE_CLCO_NEWCLIENT + WiFi.macAddress();
   udp_transmit(identMessage);
 
-  while (moduleAdress == 0 || sessionID == 0) udp_receive();
+  uint16_t timeout = 10000;
+  while (moduleAdress == 0 || sessionID == 0) 
+  {
+    if (timeout-- == 0) reboot("Server connection failed. Restarting...");
+    delay(1);
+    udp_receive();
+  }
+  Serial.println("Server Connected");
 }
 void    udp_tick()
 {
@@ -125,7 +135,7 @@ void setup()
 
   connectorManager = new ConnectorManager(&moduleAdress);
 
-  Serial.println(F("---===Setup done===---"));  
+  Serial.println(F("---===Setup finished===---"));  
 }
 void loop()
 {
@@ -134,7 +144,7 @@ void loop()
   if (currentMillis - lastMillis_SessionCheck > INTERVAL_SESSIONCHECK)
   {
     lastMillis_SessionCheck = currentMillis;
-    udp_transmit(MESSAGE_DUPL_SESSIONCHECK+sessionID);
+    udp_transmit(MESSAGE_DUPL_SESSIONCHECK+String(sessionID));
   }
 
   connectorManager->tick();

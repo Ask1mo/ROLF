@@ -22,7 +22,7 @@ void ConnectorManager::tick()
 {
     uint64_t currentMillis = millis();
 
-    if (currentMillis - lastIdentPulseMillis > INTERVALLENGTH)
+    if (currentMillis - lastIdentPulseMillis > INTERVAL_PINPULSEIDENT)
     {
         Serial.println(F("Sending Ident pulse"));
         lastIdentPulseMillis = currentMillis;

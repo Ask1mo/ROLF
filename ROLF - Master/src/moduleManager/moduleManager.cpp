@@ -2,6 +2,7 @@
 
 //NOTE: ADRESS_NONE is 0, AND MAY NEVER BE USED AS A MODULE ID
 //NOTE: MINIMISE MODULEID CHANGING IF SAME MAC ADRESS IS FOUND. UPDATE MODULE INSTEAD (IP ADRESS)
+//MAX MODULES: 255 (This is okay, system will probably only have around 100 modules)
 
 //Constructor
 ModuleManager::ModuleManager()
@@ -12,7 +13,7 @@ ModuleManager::ModuleManager()
 //Private
 bool ModuleManager::checkModuleID(uint8_t moduleID)
 {
-    for (int i = 0; i < connectedModules.size(); i++)
+    for (uint8_t i = 0; i < connectedModules.size(); i++)
     {
         if (connectedModules[i]->getModuleID() == moduleID)
         {
@@ -21,99 +22,102 @@ bool ModuleManager::checkModuleID(uint8_t moduleID)
     }
     return false;
 }
-uint8_t ModuleManager::findModule_macAdress(String macAdress)
+uint8_t ModuleManager::getModuleID_macAdress(String macAdress)
 {
-    for (int i = 0; i < connectedModules.size(); i++)
+    for (uint8_t i = 0; i < connectedModules.size(); i++)
     {
         if (connectedModules[i]->getMacAdress() == macAdress)
         {
             return connectedModules[i]->getModuleID();
         }
     }
+    return 0; //Return 0 if no module is found with the given mac adress
 }
 uint8_t ModuleManager::findModule_ipAdress(String ipAdress)
 {
-    for (int i = 0; i < connectedModules.size(); i++)
+    for (uint8_t i = 0; i < connectedModules.size(); i++)
     {
         if (connectedModules[i]->getIpAdress() == ipAdress)
         {
             return connectedModules[i]->getModuleID();
         }
     }
+    return 0; //Return 0 if no module is found with the given ip adress
 }
-bool ModuleManager::updateModule_(uint8_t moduleID, String macAdress, String ipAdress, uint8_t shape)
+bool ModuleManager::updateModule(uint8_t moduleID, String macAdress, String ipAdress)
 {
-    if (!checkModuleID(moduleID))
+    ConnectedModule *connectedModule = getModule(moduleID);
+    if(connectedModule == NULL) 
     {
-        Serial.println("Module not found");
+        Serial.println("UpdateModule: Module not found");
+        return false;
+    }
+    if (connectedModule->getMacAdress() != macAdress)
+    {
+        Serial.println("UpdateModule: MAC adress mismatch");
         return false;
     }
 
-
-    for (int i = 0; i < connectedModules.size(); i++)
+    connectedModule->setIpAdress(ipAdress);
+    return true;
+}
+ConnectedModule *ModuleManager::getModule(uint8_t moduleID)
+{
+    for (uint8_t i = 0; i < connectedModules.size(); i++)
     {
         if (connectedModules[i]->getModuleID() == moduleID)
         {
-            connectedModules[i].updateIpAdress(ipAdress);
-            connectedModules[i].updateMacAdress(macAdress);
-            connectedModules[i].updateShape(shape);
-
-            Serial.print("Module replaced with ID: ");
-            Serial.println(moduleID);
-            Serial.print("MAC address: ");
-            Serial.println(macAdress);
-            Serial.print("Shape: ");
-            Serial.println(shape);
+            return connectedModules[i];
         }
     }
+    return NULL;
 }
 
 //Public
 uint8_t ModuleManager::addNewModule(String macAdress, String ipAdress, uint8_t shape)
 {
     // Check if MAC adress has already been logged, In which case: Look up existing module with that MAC adress and update it's IP adress
-    if (findModule_macAdress(macAdress) != ADDR_NONE)
+    // Also check if the IP adress is already logged. In which case: Remove existing module with that IP adress and add new module. (The device with the old IP adress is probably disconnected)
+    // If no module is found with the given MAC adress or IP adress, add new module and assign new ID to new module
+
+    uint8_t moduleID = getModuleID_macAdress(macAdress);// stays 0 if no module is found
+
+    //If moduleID is not 0, a module with the given MAC adress is found. If it is 0, no module is found with the given MAC adress, thus a new module should be added
+    if (moduleID) 
     {
-        Serial.println("MAC adress already logged");
-         
-        return;
+        Serial.println("MAC adress already logged, updating IP adress");
+        if (!updateModule(moduleID, macAdress, ipAdress)) return 0; //If the module failed to update, return 0
+    }
+    
+
+    // Check if IP adress has already been logged. In which case: Remove existing module with that IP adress and add new module. (The device with the old IP adress is probably disconnected)
+    for (uint8_t i = 0; i < connectedModules.size(); i++)
+    {
+        if (connectedModules[i]->getIpAdress() == ipAdress && connectedModules[i]->getMacAdress() != macAdress) //If the IP adress is found, but the MAC adress is different
+        {
+            Serial.println("IP adress duplicate found, removing old module with IP adress:");
+            //Free up memory
+            delete connectedModules[i];
+            //Remove from vector
+            connectedModules.erase(connectedModules.begin() + i);
+        }
     }
 
-    // Check if IP adress has already been logged
-    for (int i = 0; i < connectedModules.size(); i++)
+    //If moduleID is not 0, a module with the given MAC adress is found and updated. If it is 0, no module is found with the given MAC adress, thus a new module should be created and added
+    if (moduleID) return moduleID; 
+
+
+    // Add new module, assign new ID: Get lowest available ID (This ID is not the size of the vector, because disconnected modules may have left gaps in the ID sequence)
+    uint8_t newModuleID = 1;
+    while (checkModuleID(newModuleID))
     {
-        if (connectedModules[i]->getIpAdress() == ipAdress)
+        if (newModuleID == 255)
         {
-            Serial.println("IP adress already logged");
-            connectedModules.;
-            return addNewModule(macAdress, ipAdress, shape);
+            Serial.println("All module ID's are taken");
+            return 0; //If all module ID's are taken, return 0
         }
-
-        // Add new module, assign new ID
-        uint8_t newModuleID = 0;
-        for (int i = 0; i < sizeof(uint8_t); i++)
-        {
-            bool idExists = false;
-            newModuleID++;
-            for (int i = 0; i < connectedModules.size(); i++)
-            {
-                if (connectedModules[i]->getModuleID() == newModuleID) idExists = true;
-            }
-            if (!idExists)
-            {
-                break;
-            }
-        }
-
-        uint16_t newModuleID = connectedModules.size(); //
-        connectedModules.push_back(new ConnectedModule(macAdress, ipAdress, newModuleID, shape));
-        Serial.print("New module added with ID: ");
-        Serial.println(newModuleID);
-        Serial.print("MAC address: ");
-        Serial.println(macAdress);
-        Serial.print("Shape: ");
-        Serial.println(shape);
-
-        return newModuleID;
+        newModuleID++;
     }
+    connectedModules.push_back(new ConnectedModule(macAdress, ipAdress, newModuleID, shape));
+    return newModuleID;
 }
