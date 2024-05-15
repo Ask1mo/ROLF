@@ -41,8 +41,10 @@ void udp_receive()
     //Message handling
     String message = String(incomingPacket);
     message.trim();
+    
     Serial.print(F("UDP RECEIVED: "));
     Serial.println(message);
+    
 
     if (message.startsWith(MESSAGE_CLCO_NEWCLIENT))//Message contains 8 pieces of data: macAdress, heartPiece, n, e, s, w, u, d
     {
@@ -55,10 +57,29 @@ void udp_receive()
       baseInfo.westPipe = message.substring(28, 29).toInt();
       baseInfo.upPipe = message.substring(29, 30).toInt();
       baseInfo.downPipe = message.substring(30, 31).toInt();
-      
+
       uint8_t moduleID = moduleManager.addNewModule(macAdress, remoteIp, baseInfo);
       if (moduleID == 0) Serial.println("New module could not be added");
       udp_transmit(MESSAGE_COCL_IDASSIGNMENT + String(moduleID) + String(currentSession), remoteIp);
+    }
+
+    if (message.startsWith(MESSAGE_CLCO_CONNECTIONCHANGED)) 
+    {
+      //Original code: String(char(moduleAdress)+ char(direction) + char(neighborAdress) + char(neighborDirection)
+
+      uint8_t moduleAdress = message.charAt(6);
+      uint8_t direction = message.charAt(7);
+      uint8_t neighborAdress = message.charAt(8);
+      uint8_t neighborDirection = message.charAt(9);   
+
+      Serial.print("Connection changed at module ");
+      Serial.print(moduleAdress);
+      Serial.print(": in direction ");
+      Serial.print(direction);
+      Serial.print(" to module ");
+      Serial.print(neighborAdress);
+      Serial.print(" on their direction ");
+      Serial.println(neighborDirection);
     }
 
     if (message.startsWith(MESSAGE_DUPL_SESSIONCHECK)) //Session check, respond with current session

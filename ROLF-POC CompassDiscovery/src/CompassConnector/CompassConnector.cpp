@@ -165,7 +165,7 @@ void CompassConnector::saveNeighborData(uint8_t newNeighborAdress, uint8_t newNe
     {
         neighborAdress = newNeighborAdress;
         neighborDirection = newNeighborDirection;
-        updateCodes.push_back(String(direction) + String(neighborAdress) + String(neighborDirection));
+        updateCodes.push_back(String(char(*moduleAdress)+ char(direction) + char(neighborAdress) + char(neighborDirection)));
 
         /*
         Serial.println();

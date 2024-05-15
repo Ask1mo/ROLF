@@ -2,6 +2,7 @@
 #define CONNECTEDMODULE_H
 
 #include "setup.h"
+#include "compassconnector/CompassConnector.h"
 
 #define DIRECTIONS 6
 #define DIRECTION_NONE  0
@@ -12,12 +13,7 @@
 #define DIRECTION_UP    5
 #define DIRECTION_DOWN  6
 
-struct NeighborModule
-{
-    uint8_t moduleID;
-    uint8_t connectedSide_Base;
-    uint8_t connectedSide_Neighbor;
-};
+
 
 struct BaseInfo
 {
@@ -37,6 +33,7 @@ class ConnectedModule
     String ipAdress;
     uint8_t moduleID;
     BaseInfo baseInfo;
+    uint8_t rotation;
     NeighborModule **neighborModules;
 
     public:
