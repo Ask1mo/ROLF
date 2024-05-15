@@ -23,6 +23,8 @@ class ConnectorManager
     ConnectorManager(uint8_t *moduleAdress);
     void tick();
     void sendSyncSignal();
+    String getUpdateCode();
+    void printConnectors();
 };
 
 

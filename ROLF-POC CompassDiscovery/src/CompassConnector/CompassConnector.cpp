@@ -100,27 +100,27 @@ void CompassConnector::transmit()
     softwareSerial->write(direction);
     claimLine(false); //To make sure the data line returns to HIGH, release it.
 }
-bool CompassConnector::readData()
+bool CompassConnector::readData(uint8_t *newNeighborAdress, uint8_t *newNeighborDirection)
 {
     uint8_t readResult = waitAndRead();
     if(readResult == false)
     {
-        neighborAdress = ADRESS_UNKNOWN;
-        neighborDirection = DIRECTION_NONE;
+        *newNeighborAdress = ADRESS_UNKNOWN;
+        *newNeighborDirection = DIRECTION_NONE;
         return false;
     }
-    else neighborAdress = readResult;
+    else *newNeighborAdress = readResult;
     
     Serial.println();
 
     readResult = waitAndRead();
     if(readResult == false)
     {
-        neighborAdress = ADRESS_UNKNOWN;
-        neighborDirection = DIRECTION_NONE;
+        *newNeighborAdress = ADRESS_UNKNOWN;
+        *newNeighborDirection = DIRECTION_NONE;
         return false;
     }
-    else neighborDirection = readResult;
+    else *newNeighborDirection = readResult;
 
         
     return true;
@@ -183,42 +183,64 @@ String CompassConnector::directionToString(uint8_t compassDirection)
     }
     return "ERROR_DIRECTIONTOSTRING";
 }
+void CompassConnector::saveNeighborData(uint8_t newNeighborAdress, uint8_t newNeighborDirection)
+{
+    if (newNeighborAdress != neighborAdress || newNeighborDirection != neighborDirection)
+    {
+        Serial.print(F("Neighbor data changed: "));
+        Serial.print(neighborAdress);
+        Serial.print(F(" -> "));
+        Serial.print(newNeighborAdress);
+        Serial.print(F(" - "));
+        Serial.print(neighborDirection);
+        Serial.print(F(" -> "));
+        Serial.println(newNeighborDirection);
+
+        neighborAdress = newNeighborAdress;
+        neighborDirection = newNeighborDirection;
+
+        Serial.println();
+        Serial.print(F("Neirbor "));
+        Serial.print(neighborAdress);
+        Serial.print(F(" connected on side "));
+        Serial.print(textName);
+        Serial.print(F(" - Neigbor's side: "));
+        Serial.println(directionToString(neighborDirection));
+
+        updateCode = String(direction) + String(neighborAdress) + String(neighborDirection);
+
+        
+    }
+}
 
 //Public
 void CompassConnector::tick()
 {
+    uint64_t currentMillis = millis();
+
     if (connectionState == NEIGH_CONNECTSTATE_BLOCKED) return;
 
     if(checkLineClaimed())
     {
-        //Check line claim duration
-        uint64_t lineClaimMillis = millis();
-        
-        if (readData())
-        {
-            connectionState = NEIGH_CONNECTSTATE_CONNECTED;
-            
-            Serial.println();
-            Serial.print(F("Neirbor "));
-            Serial.print(neighborAdress);
-            Serial.print(F(" connected on side "));
-            Serial.print(textName);
-            Serial.print(F(" - Neigbor's side: "));
-            Serial.println(directionToString(neighborDirection));
-        }
-        else
-        {
-            connectionState = NEIGH_CONNECTSTATE_DISCONNECTED;
-            Serial.println(F("No neighbor found"));
-        }
+        lastMillis_SyncPulse = currentMillis;
+        uint8_t newNeighborAdress;
+        uint8_t newNeighborDirection;
+        if (readData(&newNeighborAdress, &newNeighborDirection)) connectionState = NEIGH_CONNECTSTATE_CONNECTED;
+        else connectionState = NEIGH_CONNECTSTATE_DISCONNECTED;
+        saveNeighborData(newNeighborAdress, newNeighborDirection);
     }
+    if (lastMillis_SyncPulse + INTERVAL_SYNCPULSE_MAXABSENCE < currentMillis && connectionState == NEIGH_CONNECTSTATE_CONNECTED)
+    {
+        saveNeighborData(ADRESS_UNKNOWN, DIRECTION_NONE);
+        connectionState = NEIGH_CONNECTSTATE_DISCONNECTED;
+    }
+    
 }
 void CompassConnector::sendPulse_Ident()
 {
     claimLine(true);
     delay(PULSELENGTH_SYNC);
     transmit();
-    Serial.println(F("IDPulse sent"));
 }
 void CompassConnector::sendPulse_Sync()
 {
@@ -226,4 +248,32 @@ void CompassConnector::sendPulse_Sync()
     digitalWrite(pin_sync, LOW);
     delay(PULSELENGTH_SYNC);
     pinMode(pin_sync, INPUT_PULLUP);
+}
+
+String CompassConnector::getUpdateCode()
+{
+    String updateCodeToSend = updateCode;
+    updateCode = "";
+    return updateCodeToSend;
+}
+void CompassConnector::printConnector()
+{
+    Serial.print(F("Connector: "));
+    Serial.print(textName);
+
+    if(connectionState == NEIGH_CONNECTSTATE_CONNECTED)
+    {
+        Serial.print(F(" - Connected to "));
+        Serial.print(neighborAdress);
+        Serial.print(F(" on side "));
+        Serial.println(directionToString(neighborDirection));
+    }
+    else if(connectionState == NEIGH_CONNECTSTATE_DISCONNECTED) Serial.println(F(" - Disconnected"));
+    else if(connectionState == NEIGH_CONNECTSTATE_BLOCKED) Serial.println(F(" - Blocked"));
+    else
+    {
+        Serial.print(F(" - Unknown state: "));
+        Serial.println(connectionState);
+    }
+
 }

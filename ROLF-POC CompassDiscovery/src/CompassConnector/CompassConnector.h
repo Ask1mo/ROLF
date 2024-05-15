@@ -59,6 +59,8 @@ class CompassConnector
     uint64_t lineClaimMillis;
     uint8_t *moduleAdress;
     bool serialMode;
+    String updateCode;
+    uint64_t lastMillis_SyncPulse;
 
     //SoftwareSerial* softwareSerialTransmit;
     //SoftwareSerial* softwareSerialReceive;
@@ -71,9 +73,11 @@ class CompassConnector
     void prepareSerial_Read();
     void prepareSerial_Write();
     void transmit();
-    bool readData();
+    bool readData(uint8_t *newNeighborAdress, uint8_t *newNeighborDirection);
     uint8_t waitAndRead();
     String directionToString(uint8_t compassDirection);
+
+    void saveNeighborData(uint8_t newNeighborAdress, uint8_t newNeighborDirection);
 
     
 
@@ -82,6 +86,8 @@ class CompassConnector
     void tick();
     void sendPulse_Ident();
     void sendPulse_Sync();
+    String getUpdateCode();
+    void printConnector();
     
 };
 

@@ -22,14 +22,17 @@ void ConnectorManager::tick()
 {
     uint64_t currentMillis = millis();
 
-    if (currentMillis - lastIdentPulseMillis > INTERVAL_PINPULSEIDENT)
+    if (currentMillis - lastIdentPulseMillis > INTERVAL_SYNCPULSE)
     {
-        Serial.println(F("Sending Ident pulse"));
         lastIdentPulseMillis = currentMillis;
         compassConnectors[directionsTurn]->sendPulse_Ident();
 
         directionsTurn++;
-        if (directionsTurn >= DIRECTIONS) directionsTurn = 0;
+        if (directionsTurn >= DIRECTIONS)
+        {
+            directionsTurn = 0;
+            printConnectors();
+        }
     }
 
 
@@ -47,4 +50,24 @@ void ConnectorManager::sendSyncSignal() //Sends a sync signal to all connectors
     {
         compassConnectors[i]->sendPulse_Sync();
     }
+}
+
+String ConnectorManager::getUpdateCode()
+{
+    String updateCode = "";
+    for (int i = 0; i < DIRECTIONS; i++)
+    {
+        updateCode += compassConnectors[i]->getUpdateCode();
+    }
+    return updateCode;
+}
+
+void ConnectorManager::printConnectors()
+{
+    Serial.println(F("Printing connectors:"));
+    for (int i = 0; i < DIRECTIONS; i++)
+    {
+        compassConnectors[i]->printConnector();
+    }
+    Serial.println();
 }
