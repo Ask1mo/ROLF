@@ -19,17 +19,28 @@ struct NeighborModule
     uint8_t connectedSide_Neighbor;
 };
 
+struct BaseInfo
+{
+  uint8_t heartPiece;
+  uint8_t northPipe;
+  uint8_t eastPipe;
+  uint8_t southPipe;
+  uint8_t westPipe;
+  uint8_t upPipe;
+  uint8_t downPipe;
+};
+
 class ConnectedModule
 {
     private:
     String macAdress;
     String ipAdress;
     uint8_t moduleID;
-    uint8_t shape;
+    BaseInfo baseInfo;
     NeighborModule **neighborModules;
 
     public:
-    ConnectedModule(String macAdress, String ipAdress , uint8_t moduleID, uint8_t shape);
+    ConnectedModule(String macAdress, String ipAdress , uint8_t moduleID, BaseInfo baseInfo);
     void updateIpAdress(String ipAdress);
     void setIpAdress(String ipAdress);
     uint8_t getModuleID();

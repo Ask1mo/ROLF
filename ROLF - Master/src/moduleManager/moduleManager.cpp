@@ -4,6 +4,10 @@
 //NOTE: MINIMISE MODULEID CHANGING IF SAME MAC ADRESS IS FOUND. UPDATE MODULE INSTEAD (IP ADRESS)
 //MAX MODULES: 255 (This is okay, system will probably only have around 100 modules)
 
+
+
+
+
 //Constructor
 ModuleManager::ModuleManager()
 {
@@ -74,11 +78,33 @@ ConnectedModule *ModuleManager::getModule(uint8_t moduleID)
 }
 
 //Public
-uint8_t ModuleManager::addNewModule(String macAdress, String ipAdress, uint8_t shape)
+uint8_t ModuleManager::addNewModule(String macAdress, String ipAdress, BaseInfo baseInfo)
 {
     // Check if MAC adress has already been logged, In which case: Look up existing module with that MAC adress and update it's IP adress
     // Also check if the IP adress is already logged. In which case: Remove existing module with that IP adress and add new module. (The device with the old IP adress is probably disconnected)
     // If no module is found with the given MAC adress or IP adress, add new module and assign new ID to new module
+
+    Serial.print("Adding new module: ");
+    Serial.print("MAC: ");
+    Serial.print(macAdress);
+    Serial.print(" IP: ");
+    Serial.println(ipAdress);
+    Serial.println("BaseInfo:");
+    Serial.print("HeartPiece: ");
+    Serial.println(baseInfo.heartPiece);
+    Serial.print("NorthPipe: ");
+    Serial.println(baseInfo.northPipe);
+    Serial.print("EastPipe: ");
+    Serial.println(baseInfo.eastPipe);
+    Serial.print("SouthPipe: ");
+    Serial.println(baseInfo.southPipe);
+    Serial.print("WestPipe: ");
+    Serial.println(baseInfo.westPipe);
+    Serial.print("UpPipe: ");
+    Serial.println(baseInfo.upPipe);
+    Serial.print("DownPipe: ");
+    Serial.println(baseInfo.downPipe);
+
 
     uint8_t moduleID = getModuleID_macAdress(macAdress);// stays 0 if no module is found
 
@@ -118,6 +144,6 @@ uint8_t ModuleManager::addNewModule(String macAdress, String ipAdress, uint8_t s
         }
         newModuleID++;
     }
-    connectedModules.push_back(new ConnectedModule(macAdress, ipAdress, newModuleID, shape));
+    connectedModules.push_back(new ConnectedModule(macAdress, ipAdress, newModuleID, baseInfo));
     return newModuleID;
 }

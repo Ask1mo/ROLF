@@ -27,13 +27,31 @@ uint64_t lastMillis_SessionCheck = 0;
 
 #define TIMEOUTATTEMPTS 10
 
-#define MESSAGE_CLCO_NEWCLIENT          "NewCl"
-#define MESSAGE_COCL_IDASSIGNMENT       "IDAss"
-#define MESSAGE_CLCO_CONNECTIONCHANGED  "ConCh"
-#define MESSAGE_COCL_UPDATEREQUEST      "UpReq"
-#define MESSAGE_COCL_NEWEFFECT          "NewFX"
-#define MESSAGE_DUPL_SESSIONCHECK       "SeChk"
+#define MESSAGE_CLCO_NEWCLIENT          "NewCl" //NewCl(macAdress)(heartPiece)(n)(e)(s)(w)(u)(d)
+#define MESSAGE_COCL_IDASSIGNMENT       "IDAss" //IDAss(moduleAdress)(sessionID)
+#define MESSAGE_CLCO_CONNECTIONCHANGED  "ConCh" //ConCh(updateCode)
+#define MESSAGE_COCL_UPDATEREQUEST      "UpReq" //UpReq
+#define MESSAGE_COCL_NEWEFFECT          "NewFX" //NewFX(effectCode)
+#define MESSAGE_DUPL_SESSIONCHECK       "SeChk" //SeChk(sessionID)
 
+
+
+struct BaseInfo
+{
+  uint8_t heartPiece;
+  uint8_t northPipe;
+  uint8_t eastPipe;
+  uint8_t southPipe;
+  uint8_t westPipe;
+  uint8_t upPipe;
+  uint8_t downPipe;
+};
+String baseInfoToString(BaseInfo baseInfo)
+{
+  return String(baseInfo.heartPiece) + String(baseInfo.northPipe) + String(baseInfo.eastPipe) + String(baseInfo.southPipe) + String(baseInfo.westPipe) + String(baseInfo.upPipe) + String(baseInfo.downPipe);
+}
+
+BaseInfo systemInfo = {BASE_HEARTPIECE, BASE_NORTHPIPE, BASE_EASTPIPE, BASE_SOUTHPIPE, BASE_WESTPIPE, BASE_UPPIPE, BASE_DOWNPIPE};
 
 
 void reboot(String message)
@@ -66,11 +84,15 @@ void    udp_receive()
     String message = String(incomingPacket);
     message.trim();
 
-    if (message.startsWith(MESSAGE_COCL_IDASSIGNMENT))
+    if (message.startsWith(MESSAGE_COCL_IDASSIGNMENT))//Message contains 2 bytes: moduleAdress and sessionID
     {
-      moduleAdress = message.substring(strlen(MESSAGE_COCL_IDASSIGNMENT)).toInt();
-      Serial.println("New ID received: " );
+      moduleAdress = (uint8_t)message.substring(strlen(MESSAGE_COCL_IDASSIGNMENT), strlen(MESSAGE_COCL_IDASSIGNMENT)+1).toInt();
+      sessionID = (uint8_t)message.substring(strlen(MESSAGE_COCL_IDASSIGNMENT)+1).toInt();
+      Serial.print("Module adress: ");
       Serial.println(moduleAdress);
+      Serial.print("Session ID: ");
+      Serial.println(sessionID);
+
     }
   
     if (message.startsWith(MESSAGE_COCL_UPDATEREQUEST))
@@ -120,7 +142,7 @@ void    udp_connect()
 
 
   udp.begin(SERVER_UDPPORT);
-  String identMessage = MESSAGE_CLCO_NEWCLIENT + WiFi.macAddress();
+  String identMessage = MESSAGE_CLCO_NEWCLIENT + WiFi.macAddress() + baseInfoToString(systemInfo);
   udp_transmit(identMessage);
 
   uint16_t timeout = 10000;

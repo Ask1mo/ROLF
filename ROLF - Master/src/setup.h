@@ -22,17 +22,4 @@
 #define PASSWORD "AskimoGlow"
 #define SERVER_UDPPORT 4210  // local port to listen on
 
-
-
-#define MESSAGE_CLCO_NEWCLIENT          "NewCl"
-#define MESSAGE_COCL_IDASSIGNMENT       "IDAss"
-
-#define MESSAGE_CLCO_CONNECTIONCHANGED  "ConCh"
-#define MESSAGE_COCL_UPDATEREQUEST      "UpReq"
-
-#define MESSAGE_COCL_NEWEFFECT          "NewFX"
-
-#define MESSAGE_DUPL_SESSIONCHECK       "SeChk"
-
-
 #endif

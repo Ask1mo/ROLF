@@ -8,6 +8,8 @@
 #define ADDR_NONE 0
 
 
+
+
 class ModuleManager
 {
     private:
@@ -21,7 +23,7 @@ class ModuleManager
 
     public:
     ModuleManager();
-    uint8_t addNewModule(String macAdress, String ipAdress, uint8_t shape);
+    uint8_t addNewModule(String macAdress, String ipAdress, BaseInfo baseInfo);
 };
 
 

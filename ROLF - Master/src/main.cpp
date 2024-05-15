@@ -4,6 +4,12 @@
 #include "Askbutton/AskButton.h"
 #include "modulemanager/moduleManager.h"
 
+#define MESSAGE_CLCO_NEWCLIENT          "NewCl" //NewCl(macAdress)(heartPiece)(n)(e)(s)(w)(u)(d)
+#define MESSAGE_COCL_IDASSIGNMENT       "IDAss" //IDAss(moduleAdress)(sessionID)
+#define MESSAGE_CLCO_CONNECTIONCHANGED  "ConCh" //ConCh(updateCode)
+#define MESSAGE_COCL_UPDATEREQUEST      "UpReq" //UpReq
+#define MESSAGE_COCL_NEWEFFECT          "NewFX" //NewFX(effectCode)
+#define MESSAGE_DUPL_SESSIONCHECK       "SeChk" //SeChk(sessionID)
 
 WiFiUDP udp;
 ModuleManager moduleManager;
@@ -35,15 +41,24 @@ void udp_receive()
     //Message handling
     String message = String(incomingPacket);
     message.trim();
+    Serial.print(F("UDP RECEIVED: "));
+    Serial.println(message);
 
-    if (message.startsWith(MESSAGE_CLCO_NEWCLIENT))//New client, add to module list and respond with ID
+    if (message.startsWith(MESSAGE_CLCO_NEWCLIENT))//Message contains 8 pieces of data: macAdress, heartPiece, n, e, s, w, u, d
     {
-      String mac = message.substring(strlen(MESSAGE_CLCO_NEWCLIENT));
-      Serial.println("Parsed MAC: " + mac);
-
-      uint8_t newModuleID = moduleManager.addNewModule(mac, remoteIp, 1);
-      udp_transmit(MESSAGE_COCL_IDASSIGNMENT + String(newModuleID), remoteIp);
-      udp_transmit(MESSAGE_DUPL_SESSIONCHECK + String(currentSession), remoteIp);
+      String macAdress = message.substring(6, 22);
+      BaseInfo baseInfo = {0, 0, 0, 0, 0, 0, 0};
+      baseInfo.heartPiece = message.substring(22, 25).toInt();
+      baseInfo.northPipe = message.substring(25, 26).toInt();
+      baseInfo.eastPipe = message.substring(26, 27).toInt();
+      baseInfo.southPipe = message.substring(27, 28).toInt();
+      baseInfo.westPipe = message.substring(28, 29).toInt();
+      baseInfo.upPipe = message.substring(29, 30).toInt();
+      baseInfo.downPipe = message.substring(30, 31).toInt();
+      
+      uint8_t moduleID = moduleManager.addNewModule(macAdress, remoteIp, baseInfo);
+      if (moduleID == 0) Serial.println("New module could not be added");
+      udp_transmit(MESSAGE_COCL_IDASSIGNMENT + String(moduleID) + String(currentSession), remoteIp);
     }
 
     if (message.startsWith(MESSAGE_DUPL_SESSIONCHECK)) //Session check, respond with current session
@@ -89,7 +104,7 @@ void setup()
   Serial.println("Session ID: " + String(currentSession));
 
   udp_connect();
-  
+
   Serial.println(F("---===Setup finished===---"));  
 }
 

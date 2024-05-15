@@ -2,12 +2,12 @@
 
 
 //Constructor
-ConnectedModule::ConnectedModule(String macAdress, String ipAdress, uint8_t moduleID, uint8_t shape)
+ConnectedModule::ConnectedModule(String macAdress, String ipAdress, uint8_t moduleID, BaseInfo baseInfo)
 {
     this->macAdress = macAdress;
     this->ipAdress = ipAdress;
     this->moduleID = moduleID;
-    this->shape = shape;
+    this->baseInfo = baseInfo;
     this->neighborModules = new NeighborModule*[DIRECTIONS];
     for (int i = 0; i < DIRECTIONS; i++)
     {
