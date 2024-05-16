@@ -78,6 +78,12 @@ ConnectedModule *ModuleManager::getModule(uint8_t moduleID)
 }
 
 //Public
+
+void ModuleManager::tick()
+{
+    //Attempt to put new modules in the grid.
+    
+}
 uint8_t ModuleManager::addNewModule(String macAdress, String ipAdress, BaseInfo baseInfo)
 {
     // Check if MAC adress has already been logged, In which case: Look up existing module with that MAC adress and update it's IP adress
@@ -146,4 +152,14 @@ uint8_t ModuleManager::addNewModule(String macAdress, String ipAdress, BaseInfo 
     }
     connectedModules.push_back(new ConnectedModule(macAdress, ipAdress, newModuleID, baseInfo));
     return newModuleID;
+}
+void ModuleManager::updateModuleConnection(uint8_t moduleID, uint8_t direction, uint8_t neighborID, uint8_t neighborDirection)
+{
+    ConnectedModule *module = getModule(moduleID);
+    if (module == NULL)
+    {
+        Serial.println("Module not found");
+        return;
+    }
+    module->updateConnection(direction, neighborID, neighborDirection);
 }

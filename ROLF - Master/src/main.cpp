@@ -4,6 +4,8 @@
 #include "Askbutton/AskButton.h"
 #include "modulemanager/moduleManager.h"
 
+#define WIFICONNECTATTEMPTS 10
+
 #define MESSAGE_CLCO_NEWCLIENT          "NewCl" //NewCl(macAdress)(heartPiece)(n)(e)(s)(w)(u)(d)
 #define MESSAGE_COCL_IDASSIGNMENT       "IDAss" //IDAss(moduleAdress)(sessionID)
 #define MESSAGE_CLCO_CONNECTIONCHANGED  "ConCh" //ConCh(updateCode)
@@ -67,10 +69,10 @@ void udp_receive()
     {
       //Original code: String(char(moduleAdress)+ char(direction) + char(neighborAdress) + char(neighborDirection)
 
-      uint8_t moduleAdress = message.charAt(6);
-      uint8_t direction = message.charAt(7);
-      uint8_t neighborAdress = message.charAt(8);
-      uint8_t neighborDirection = message.charAt(9);   
+      uint8_t moduleAdress      = (uint8_t)message[5];
+      uint8_t direction         = (uint8_t)message[6];
+      uint8_t neighborAdress    = (uint8_t)message[7];
+      uint8_t neighborDirection = (uint8_t)message[8];   
 
       Serial.print("Connection changed at module ");
       Serial.print(moduleAdress);
@@ -80,6 +82,8 @@ void udp_receive()
       Serial.print(neighborAdress);
       Serial.print(" on their direction ");
       Serial.println(neighborDirection);
+
+      moduleManager.updateModuleConnection(moduleAdress, direction, neighborAdress, neighborDirection);
     }
 
     if (message.startsWith(MESSAGE_DUPL_SESSIONCHECK)) //Session check, respond with current session
@@ -91,14 +95,28 @@ void udp_receive()
 }
 void udp_connect()
 {
+  Serial.println("(Re)Connecting to WiFi");
+
+  uint8_t attempts = 0;
   WiFi.setHostname("GLOWMASTER");
-  // Connect to Wi-Fi
   WiFi.begin(SSID, PASSWORD);
   while (WiFi.status() != WL_CONNECTED)
   {
+    if (attempts++ > WIFICONNECTATTEMPTS)
+    {
+      Serial.println("WIFI connection failed. Restarting...");
+      ESP.restart();
+    }
     delay(1000);
-    Serial.println("Connecting to WiFi...");
+    Serial.print("Attempting connection to ");
+    Serial.print(SSID);
+    Serial.print(" (");
+    Serial.print(attempts);
+    Serial.print("/");
+    Serial.print(WIFICONNECTATTEMPTS);
+    Serial.println(")");
   }
+  Serial.println("WiFi Connected");
   Serial.println(WiFi.localIP());
 
   // Start UDP

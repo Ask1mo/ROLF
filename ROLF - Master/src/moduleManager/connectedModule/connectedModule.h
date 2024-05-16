@@ -13,6 +13,8 @@
 #define DIRECTION_UP    5
 #define DIRECTION_DOWN  6
 
+#define ADDR_NONE 0
+
 
 
 struct BaseInfo
@@ -32,9 +34,10 @@ class ConnectedModule
     String macAdress;
     String ipAdress;
     uint8_t moduleID;
-    BaseInfo baseInfo;
+    uint8_t shape;
     uint8_t rotation;
-    NeighborModule **neighborModules;
+    CompassConnector **compassConnectors;
+    bool puzzlePlaced;
 
     public:
     ConnectedModule(String macAdress, String ipAdress , uint8_t moduleID, BaseInfo baseInfo);
@@ -43,6 +46,10 @@ class ConnectedModule
     uint8_t getModuleID();
     String getMacAdress();
     String getIpAdress();
+    void updateConnection(uint8_t direction, uint8_t neighborID, uint8_t neighborDirection);
+
+    bool getPuzzlePlaced();
+    void setPuzzlePlaced(bool puzzlePlaced);
 };
 
 

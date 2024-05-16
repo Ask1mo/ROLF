@@ -20,3 +20,29 @@ CompassConnector::CompassConnector(uint8_t compassDirection, uint8_t basePipe)
 //Private
 
 //Public
+void CompassConnector::updateConnection(uint8_t neighborAdress, uint8_t neighborDirection)
+{
+    if(DEBUGLEVEL >= DEBUG_OPERATIONS)
+    {
+        Serial.print(F("Updated connection to adress "));
+        Serial.print(neighborAdress);
+        Serial.print(F(" in direction "));
+        Serial.println(neighborDirection);
+    }
+
+    this->neighborAdress = neighborAdress;
+    this->neighborDirection = neighborDirection;
+
+    if (neighborAdress == ADRESS_UNKNOWN && neighborDirection == DIRECTION_NONE)
+    {
+        this->connectionState = NEIGH_CONNECTSTATE_DISCONNECTED;
+    }
+    else if (neighborAdress == ADRESS_UNKNOWN || neighborDirection == DIRECTION_NONE)
+    {   
+        this->connectionState = NEIGH_CONNECTSTATE_UNKNOWN;
+    }
+    else
+    {
+        this->connectionState = NEIGH_CONNECTSTATE_CONNECTED;
+    }
+}

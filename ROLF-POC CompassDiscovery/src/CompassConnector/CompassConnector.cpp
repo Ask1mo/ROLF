@@ -165,17 +165,35 @@ void CompassConnector::saveNeighborData(uint8_t newNeighborAdress, uint8_t newNe
     {
         neighborAdress = newNeighborAdress;
         neighborDirection = newNeighborDirection;
-        updateCodes.push_back(String(char(*moduleAdress)+ char(direction) + char(neighborAdress) + char(neighborDirection)));
+        String updateCode = "";
+        updateCode += char(*moduleAdress);
+        updateCode += char(direction);
+        updateCode += char(neighborAdress);
+        updateCode += char(neighborDirection);
+        updateCodes.push_back(updateCode);
+        //updateCodes.push_back(String(char(*moduleAdress)+ char(direction) + char(neighborAdress) + char(neighborDirection)));
 
-        /*
+        
         Serial.println();
-        Serial.print(F("Neirbor "));
+        Serial.print(F("ModuleID "));
+        Serial.print(*moduleAdress);
+        Serial.print(F(" - Neighbor "));
         Serial.print(neighborAdress);
         Serial.print(F(" connected on side "));
         Serial.print(directionToString(direction));
         Serial.print(F(" - Neigbor's side: "));
         Serial.println(directionToString(neighborDirection));
-        */      
+
+        Serial.print("ReconvertTest: ");
+        Serial.print((uint8_t)updateCode[0]);
+        Serial.print(" ");
+        Serial.print((uint8_t)updateCode[1]);
+        Serial.print(" ");
+        Serial.print((uint8_t)updateCode[2]);
+        Serial.print(" ");
+        Serial.print((uint8_t)updateCode[3]);
+        Serial.println();
+            
     }
 }
 

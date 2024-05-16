@@ -23,12 +23,6 @@
 #define DIRECTION_UP    5
 #define DIRECTION_DOWN  6
 
-struct NeighborModule
-{
-    uint8_t moduleID;
-    uint8_t connectedSide_Base;
-    uint8_t connectedSide_Neighbor;
-};
 
 class CompassConnector
 {
@@ -42,6 +36,7 @@ class CompassConnector
     
     public:
     CompassConnector(uint8_t compassDirection, uint8_t basePipe);
+    void updateConnection(uint8_t neighborAdress, uint8_t neighborDirection);
 };
 
 
