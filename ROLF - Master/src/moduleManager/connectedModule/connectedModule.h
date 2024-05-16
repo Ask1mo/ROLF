@@ -16,7 +16,6 @@
 #define ADDR_NONE 0
 
 
-
 struct BaseInfo
 {
   uint8_t heartPiece;

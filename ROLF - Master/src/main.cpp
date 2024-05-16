@@ -152,6 +152,7 @@ void loop()
   uint64_t currentMillis = millis();
 
   udp_tick();
+  moduleManager.tick();
   /*
   if (currentMillis - lastSystemScanMillis > INTERVAL_MODULECHANGESCAN)
   {

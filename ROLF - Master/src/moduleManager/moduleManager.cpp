@@ -12,6 +12,18 @@
 ModuleManager::ModuleManager()
 {
     Serial.println("ModuleManager created");
+    boardIsEmpty = true;
+
+    //Initialize puzzlePieces
+    for (uint8_t i = 0; i < TEMP_PUZZLEGRIDSIZE; i++)
+    {
+        for (uint8_t j = 0; j < TEMP_PUZZLEGRIDSIZE; j++)
+        {
+            puzzlePieces[i][j].parentModule = NULL;
+            puzzlePieces[i][j].pieceType = PUZZLEPIECE_TYPE_EMPTY;
+            puzzlePieces[i][j].rotation = 0;
+        }
+    }
 }
 
 //Private
@@ -76,13 +88,94 @@ ConnectedModule *ModuleManager::getModule(uint8_t moduleID)
     }
     return NULL;
 }
+void ModuleManager::printPuzzleGrid()
+{
+    Serial.println();
+    Serial.println("Printing grid:");
+    for (uint8_t i = 0; i < TEMP_PUZZLEGRIDSIZE; i++)
+    {
+        Serial.print("Row ");
+        Serial.print(i);
+        if(i<10) Serial.print(" ");
+        Serial.print(" [");
+
+        uint8_t stupidID = 0;
+
+        for (uint8_t j = 0; j < TEMP_PUZZLEGRIDSIZE; j++)
+        {
+            switch (puzzlePieces[i][j].pieceType)
+            {
+                case PUZZLEPIECE_TYPE_EMPTY:
+                Serial.print("  ");
+                break;
+
+                case PUZZLEPIECE_TYPE_HEART:
+                stupidID = puzzlePieces[i][j].parentModule->getModuleID();
+                if(stupidID < 10) Serial.print(" ");
+                Serial.print(stupidID);
+                break;
+
+                case PUZZLEPIECE_TYPE_PIPE:
+                Serial.print("P");
+                break;
+            }
+            Serial.print(":");
+        }
+        Serial.println(" ]");
+        Serial.println();
+    
+        Serial.print("       ");    
+        for(uint8_t j = 0; j < TEMP_PUZZLEGRIDSIZE; j++)
+        {
+            Serial.print(":..");
+        }
+        Serial.println();
+        
+    }
+}
+void ModuleManager::tryFitPuzzlePiece(ConnectedModule *connectedModule)
+{
+    //Assuming piece is not already in grid. (Fix later)
+    Serial.print("Trying to fit puzzle piece ");
+    Serial.print(connectedModule->getModuleID());
+
+    if (boardIsEmpty)
+    {
+        Serial.println("Board is empty, placing first piece in middle");
+        puzzlePieces[TEMP_PUZZLEGRIDSIZE/2][TEMP_PUZZLEGRIDSIZE/2].parentModule = connectedModule;
+        puzzlePieces[TEMP_PUZZLEGRIDSIZE/2][TEMP_PUZZLEGRIDSIZE/2].pieceType = PUZZLEPIECE_TYPE_HEART;
+        puzzlePieces[TEMP_PUZZLEGRIDSIZE/2][TEMP_PUZZLEGRIDSIZE/2].rotation = 0;
+        connectedModule->setPuzzlePlaced(true);
+        boardIsEmpty = false;
+        tryFitPuzzlePiece_Pipes(connectedModule);
+        return;
+    }
+
+}
+void ModuleManager::tryFitPuzzlePiece_Pipes(uint8_t heartX, uint8_t heartY, BaseInfo baseInfo, uint8_t rotation)
+{
+
+}
+void ModuleManager::tryFitPuzzlePiece_PipeSingle(ConnectedModule *ConnectedModule)
+{
+    Serial.println("Trying to fit single pipe");
+}
 
 //Public
-
 void ModuleManager::tick()
 {
-    //Attempt to put new modules in the grid.
-    
+    //Draw puzzle grid every INTERVAL_DRAWPUZZLE
+    if (millis() - lastMillis_PuzzleDraw > INTERVAL_DRAWPUZZLE)
+    {
+        lastMillis_PuzzleDraw = millis();
+        printPuzzleGrid();
+    }
+
+
+    for (uint8_t i = 0; i < connectedModules.size(); i++)
+    {
+        if(!connectedModules[i]->getPuzzlePlaced()) tryFitPuzzlePiece(connectedModules[i]);
+    }
 }
 uint8_t ModuleManager::addNewModule(String macAdress, String ipAdress, BaseInfo baseInfo)
 {
