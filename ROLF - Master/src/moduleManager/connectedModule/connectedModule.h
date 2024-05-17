@@ -33,8 +33,8 @@ class ConnectedModule
     String macAdress;
     String ipAdress;
     uint8_t moduleID;
-    uint8_t shape;
-    uint8_t rotation;
+    BaseInfo baseInfo;
+    BaseInfo rotatedBaseInfo;
     CompassConnector **compassConnectors;
     bool puzzlePlaced;
 
@@ -49,6 +49,7 @@ class ConnectedModule
 
     bool getPuzzlePlaced();
     void setPuzzlePlaced(bool puzzlePlaced);
+    BaseInfo getBaseInfo();
 };
 
 

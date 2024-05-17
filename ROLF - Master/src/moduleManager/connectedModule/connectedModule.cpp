@@ -7,7 +7,7 @@ ConnectedModule::ConnectedModule(String macAdress, String ipAdress, uint8_t modu
     this->macAdress = macAdress;
     this->ipAdress = ipAdress;
     this->moduleID = moduleID;
-    shape = baseInfo.heartPiece;
+    this->baseInfo = baseInfo;
     puzzlePlaced = false;
     //Todo: make this prettier.
     compassConnectors = new CompassConnector*[DIRECTIONS];
@@ -80,4 +80,9 @@ bool ConnectedModule::getPuzzlePlaced()
 void ConnectedModule::setPuzzlePlaced(bool puzzlePlaced)
 {
     this->puzzlePlaced = puzzlePlaced;
+}
+
+BaseInfo ConnectedModule::getBaseInfo()
+{
+    return baseInfo;
 }

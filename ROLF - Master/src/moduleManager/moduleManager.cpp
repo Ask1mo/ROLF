@@ -21,7 +21,6 @@ ModuleManager::ModuleManager()
         {
             puzzlePieces[i][j].parentModule = NULL;
             puzzlePieces[i][j].pieceType = PUZZLEPIECE_TYPE_EMPTY;
-            puzzlePieces[i][j].rotation = 0;
         }
     }
 }
@@ -135,6 +134,18 @@ void ModuleManager::printPuzzleGrid()
 }
 void ModuleManager::tryFitPuzzlePiece(ConnectedModule *connectedModule)
 {
+    //This function adds a connectedModule to the puzzle grid in the form of a Puzzle piece. It also adds the connectedModule's pipes to the puzzle grid as puzzle pieces.
+    //Before a module can be added to the grid, The required rotation has to be calculated. (If Module 1's east pipe is connected to module 2's north pipe.  module 2 has to be rotated 90 degrees counter clockwise)
+
+    //Before placing a module you need to "Scout" if the heart and all pipe pieces can be placed. If not, the module should not be placed.
+    //
+    //Also, if the board is empty, the first piece should be placed in the middle of the board.
+
+
+
+
+
+
     //Assuming piece is not already in grid. (Fix later)
     Serial.print("Trying to fit puzzle piece ");
     Serial.print(connectedModule->getModuleID());
@@ -144,21 +155,95 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *connectedModule)
         Serial.println("Board is empty, placing first piece in middle");
         puzzlePieces[TEMP_PUZZLEGRIDSIZE/2][TEMP_PUZZLEGRIDSIZE/2].parentModule = connectedModule;
         puzzlePieces[TEMP_PUZZLEGRIDSIZE/2][TEMP_PUZZLEGRIDSIZE/2].pieceType = PUZZLEPIECE_TYPE_HEART;
-        puzzlePieces[TEMP_PUZZLEGRIDSIZE/2][TEMP_PUZZLEGRIDSIZE/2].rotation = 0;
         connectedModule->setPuzzlePlaced(true);
         boardIsEmpty = false;
-        tryFitPuzzlePiece_Pipes(connectedModule);
+        tryFitPuzzlePiece_Pipes(TEMP_PUZZLEGRIDSIZE/2, TEMP_PUZZLEGRIDSIZE/2, connectedModule, 0);
         return;
     }
 
 }
-void ModuleManager::tryFitPuzzlePiece_Pipes(uint8_t heartX, uint8_t heartY, BaseInfo baseInfo, uint8_t rotation)
+void ModuleManager::tryFitPuzzlePiece_Pipes(uint8_t heartX, uint8_t heartY, ConnectedModule *connectedModule, uint8_t rotation)
 {
+    Serial.println("Trying to fit pipes");
+    BaseInfo baseInfo = connectedModule->getBaseInfo();
 
+    for (uint8_t i = 0; i < DIRECTIONS; i++)
+    {
+        if(baseInfo.northPipe == ) Serial.println("North pipe found");
+    }
+
+    //North
+    if (baseInfo.northPipe == BASE_PIPE_FORWARDBACKWARD)
+    {
+        if (!tryFitPuzzlePiece_PipeSingle(heartX, heartY - 1, connectedModule, 1, ORIENTATION_VERTICAL, DIRECTION_BACKWARD)) return;
+    }
+    else if (baseInfo.northPipe == BASE_PIPE_LEFTRIGHT)
+    {
+        if (!tryFitPuzzlePiece_PipeSingle(heartX, heartY - 1, connectedModule, 1, ORIENTATION_HORIZONTAL, DIRECTION_FORWARD)) return;
+    }
+    else if (baseInfo.northPipe == BASE_PIPE_UPDOWN)
+    {
+        if (!tryFitPuzzlePiece_PipeSingle(heartX, heartY - 1, connectedModule, 1, ORIENTATION_VERTICAL, DIRECTION_FORWARD)) return;
+    }
+    else if (baseInfo.northPipe == BASE_PIPE_ENDCAP)
+    {
+        if (!tryFitPuzzlePiece_PipeSingle(heartX, heartY - 1, connectedModule, 1, ORIENTATION_HORIZONTAL, DIRECTION_FORWARD)) return;
+    }
+    else if (baseInfo.northPipe
+
+
+    if (!tryFitPuzzlePiece_PipeSingle(heartX, heartY - 1, connectedModule, 1, ORIENTATION_VERTICAL, DIRECTION_BACKWARD)) return;
+    if (!tryFitPuzzlePiece_PipeSingle(heartX + 1, heartY, connectedModule, 1, ORIENTATION_HORIZONTAL, DIRECTION_FORWARD)) return;
+    if (!tryFitPuzzlePiece_PipeSingle(heartX, heartY + 1, connectedModule, 1, ORIENTATION_VERTICAL, DIRECTION_FORWARD)) return;
+    if (!tryFitPuzzlePiece_PipeSingle(heartX - 1, heartY, connectedModule, 1, ORIENTATION_HORIZONTAL, DIRECTION_BACKWARD)) return;
+    if (!tryFitPuzzlePiece_PipeSingle(heartX, heartY, connectedModule, 1, ORIENTATION_VERTICAL, DIRECTION_FORWARD)) return;
+    if (!tryFitPuzzlePiece_PipeSingle(heartX, heartY, connectedModule, 1, ORIENTATION_VERTICAL, DIRECTION_FORWARD)) return;
 }
-void ModuleManager::tryFitPuzzlePiece_PipeSingle(ConnectedModule *ConnectedModule)
+bool ModuleManager::tryFitPuzzlePiece_PipeSingle(uint8_t heartX, uint8_t heartY, ConnectedModule *connectedModule, uint8_t pipeLength, bool horizontalOrVertical, bool forwardOrBackward)
 {
-    Serial.println("Trying to fit single pipe");
+    for (uint8_t i = 0; i < pipeLength; i++)
+    {
+        if (horizontalOrVertical == ORIENTATION_HORIZONTAL)
+        {
+            if (forwardOrBackward == DIRECTION_FORWARD)
+            {
+                if (puzzlePieces[heartX + i][heartY].pieceType != PUZZLEPIECE_TYPE_EMPTY) return addPieceToPuzzleGrid(heartX + i, heartY, connectedModule, PUZZLEPIECE_TYPE_PIPE);
+                
+            }
+            else //DIRECTION_BACKWARD
+            {
+                if (puzzlePieces[heartX - i][heartY].pieceType != PUZZLEPIECE_TYPE_EMPTY) return addPieceToPuzzleGrid(heartX - i, heartY, connectedModule, PUZZLEPIECE_TYPE_PIPE);
+            }
+        }
+        else //ORIENTATION_VERTICAL
+        {
+            if (forwardOrBackward == DIRECTION_FORWARD)
+            {
+                if (puzzlePieces[heartX][heartY + i].pieceType != PUZZLEPIECE_TYPE_EMPTY) return addPieceToPuzzleGrid(heartX, heartY + i, connectedModule, PUZZLEPIECE_TYPE_PIPE);
+            }
+            else //DIRECTION_BACKWARD
+            {
+                if (puzzlePieces[heartX][heartY - i].pieceType != PUZZLEPIECE_TYPE_EMPTY) return addPieceToPuzzleGrid(heartX, heartY - i, connectedModule, PUZZLEPIECE_TYPE_PIPE);
+            }
+        }
+    }
+    return false;
+}
+bool ModuleManager::addPieceToPuzzleGrid (uint8_t x, uint8_t y, ConnectedModule *connectedModule, uint8_t pieceType)
+{
+    Serial.print("Adding piece to grid at ");
+    Serial.print(x);
+    Serial.print(", ");
+    Serial.println(y);
+    //Check if x and y are within bounds (Upper and lower bounds)
+    if (x >= TEMP_PUZZLEGRIDSIZE || x < 0 || y >= TEMP_PUZZLEGRIDSIZE || y <0) return false;
+
+
+    if (puzzlePieces[x][y].pieceType != PUZZLEPIECE_TYPE_EMPTY) return false;
+    puzzlePieces[x][y].parentModule = connectedModule;
+    puzzlePieces[x][y].pieceType = pieceType;
+    Serial.println("Piece added to grid");
+    return true;
 }
 
 //Public

@@ -15,11 +15,15 @@
 
 #define INTERVAL_DRAWPUZZLE 5000
 
+#define ORIENTATION_HORIZONTAL 0
+#define ORIENTATION_VERTICAL   1
+#define DIRECTION_FORWARD      0
+#define DIRECTION_BACKWARD     1
+
 struct PuzzlePiece
 {
     ConnectedModule *parentModule;
     uint8_t pieceType;
-    uint8_t rotation;
 };
 
 
@@ -40,8 +44,9 @@ class ModuleManager
     ConnectedModule *getModule(uint8_t moduleID);
     void printPuzzleGrid();
     void tryFitPuzzlePiece(ConnectedModule *connectedModule);
-    void tryFitPuzzlePiece_Pipes(uint8_t heartX, uint8_t heartY, BaseInfo baseInfo, uint8_t rotation);
-    void tryFitPuzzlePiece_PipeSingle(ConnectedModule *connectedModule);
+    void tryFitPuzzlePiece_Pipes(uint8_t heartX, uint8_t heartY, ConnectedModule *connectedModule, uint8_t rotation);
+    bool tryFitPuzzlePiece_PipeSingle(uint8_t heartX, uint8_t heartY, ConnectedModule *connectedModule, uint8_t pipeLength, bool horizontalOrVertical, bool forwardOrBackward);
+    bool addPieceToPuzzleGrid(uint8_t x, uint8_t y, ConnectedModule *connectedModule, uint8_t pieceType);
 
     public:
     ModuleManager();
