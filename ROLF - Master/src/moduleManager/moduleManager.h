@@ -44,9 +44,6 @@ class ModuleManager
     ConnectedModule *getModule(uint8_t moduleID);
     void printPuzzleGrid();
     void tryFitPuzzlePiece(ConnectedModule *connectedModule);
-    void tryFitPuzzlePiece_Pipes(uint8_t heartX, uint8_t heartY, ConnectedModule *connectedModule, uint8_t rotation);
-    bool tryFitPuzzlePiece_PipeSingle(uint8_t heartX, uint8_t heartY, ConnectedModule *connectedModule, uint8_t pipeLength, bool horizontalOrVertical, bool forwardOrBackward);
-    bool addPieceToPuzzleGrid(uint8_t x, uint8_t y, ConnectedModule *connectedModule, uint8_t pieceType);
 
     public:
     ModuleManager();

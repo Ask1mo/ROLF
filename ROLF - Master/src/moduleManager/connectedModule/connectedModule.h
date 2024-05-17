@@ -2,7 +2,6 @@
 #define CONNECTEDMODULE_H
 
 #include "setup.h"
-#include "compassconnector/CompassConnector.h"
 
 #define DIRECTIONS 6
 #define DIRECTION_NONE  0
@@ -15,6 +14,21 @@
 
 #define ADDR_NONE 0
 
+#define ROTATION_0Deg 0
+#define ROTATION_90Deg 1
+#define ROTATION_180Deg 2
+#define ROTATION_270Deg 3
+
+struct CompassConnector
+{
+  uint8_t compassDirection; //NEWSUD
+  uint8_t basePipe; //The type of pipe that is connected to the base of the module. (Pipe length, female, end cap.)
+
+  uint8_t rotationCompensatedDirection;
+
+  uint8_t neighborAdress; //Adress of a connected neigbor (0 if no neighbor is disconnected)
+  uint8_t neighborDirection; //Connected NEWSUD of a neigbor
+};
 
 struct BaseInfo
 {
@@ -34,8 +48,7 @@ class ConnectedModule
     String ipAdress;
     uint8_t moduleID;
     BaseInfo baseInfo;
-    BaseInfo rotatedBaseInfo;
-    CompassConnector **compassConnectors;
+    CompassConnector compassConnectors[DIRECTIONS];
     bool puzzlePlaced;
 
     public:
@@ -50,6 +63,10 @@ class ConnectedModule
     bool getPuzzlePlaced();
     void setPuzzlePlaced(bool puzzlePlaced);
     BaseInfo getBaseInfo();
+    uint8_t checkHasNeighbor(uint8_t neighborID); //Returns the direction of the neighbor if it is connected, otherwise 0.
+    CompassConnector getConnectorInfo(uint8_t direction);
+    void rotate(uint8_t rotation);
+
 };
 
 
