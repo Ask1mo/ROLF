@@ -134,12 +134,16 @@ void ModuleManager::printPuzzleGrid()
 }
 void ModuleManager::tryFitPuzzlePiece(ConnectedModule *connectedModule)
 {
-    //This function adds a connectedModule to the puzzle grid in the form of a Puzzle piece. It also adds the connectedModule's pipes to the puzzle grid as puzzle pieces.
+    //This function adds a connectedModule (heart piece) to the puzzle grid in the form of a Puzzle piece . It also adds the connectedModule's pipes to the puzzle grid as puzzle pieces.
     //Before a module can be added to the grid, The required rotation has to be calculated. (If Module 1's east pipe is connected to module 2's north pipe.  module 2 has to be rotated 90 degrees counter clockwise)
-
     //Before placing a module you need to "Scout" if the heart and all pipe pieces can be placed. If not, the module should not be placed.
-    //
-    //Also, if the board is empty, the first piece should be placed in the middle of the board.
+    //Also, if the board is empty, the first piece should be placed in the middle of the board
+    //If the board is not empty, the module should be placed in a way that it connects to the existing pieces on the board:
+    // 1. Find the piece on the board that the new module should connect to
+    // 2. Rotate the module to the correct orientation so it can connect to the existing piece
+    // 3. Scout the board to see if the module can be placed (Take the led pipes that come out of the new and old heart pieces into account)
+    // 4. If the module can be placed, place it on the board together with the led pipes that come out of the heart piece
+    
 
 
 
