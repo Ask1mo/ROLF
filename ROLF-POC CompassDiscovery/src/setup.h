@@ -20,7 +20,7 @@
 //Wifi & UDP
 #define SSID "GLOWII"
 #define PASSWORD "AskimoGlow"
-#define SERVER_IP "192.168.137.62"
+#define SERVER_IP "192.168.137.123"
 #define SERVER_UDPPORT 4210  // local port to listen on
 
 //Serial
@@ -58,13 +58,13 @@
 
 #ifdef PRESET_NORMALX
     #define BASE_HEARTPIECE BASE_HEART_X 
-    #define BASE_NORTHPIPE    1
+    #define BASE_NORTHPIPE    2
     #define BASE_EASTPIPE     1
     #define BASE_SOUTHPIPE    1
     #define BASE_WESTPIPE     1
     #define BASE_UPPIPE       0
     #define BASE_DOWNPIPE     0
-#endif
+#endif  
 
 
 

@@ -18,12 +18,15 @@
 //Bit 0b1: N/A
 //Bit 0: N/A
 
-#define BASE_PIPE_UNKNOWN 0
-#define BASE_PIPE_FORWARDBACKWARD       251
-#define BASE_PIPE_LEFTRIGHT             252
-#define BASE_PIPE_UPDOWN                253
-#define BASE_PIPE_ENDCAP                254
+#define BASE_PIPE_UNKNOWN               0
 #define BASE_PIPE_FEMALE                255
+
+#define PUZZLEPIECE_TYPE_EMPTY                  0
+#define PUZZLEPIECE_TYPE_HEART                  1
+#define PUZZLEPIECE_TYPE_PIPE_FORWARDBACKWARD   2
+#define PUZZLEPIECE_TYPE_PIPE_LEFTRIGHT         3
+#define PUZZLEPIECE_TYPE_PIPE_UPDOWN            4
+
 
 #define BASE_HEART_UNKNOWN 0
 

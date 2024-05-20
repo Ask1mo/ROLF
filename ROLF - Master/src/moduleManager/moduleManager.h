@@ -9,9 +9,6 @@
 
 #define TEMP_PUZZLEGRIDSIZE 20
 
-#define PUZZLEPIECE_TYPE_EMPTY  0
-#define PUZZLEPIECE_TYPE_HEART  1
-#define PUZZLEPIECE_TYPE_PIPE   2
 
 #define INTERVAL_DRAWPUZZLE 5000
 
@@ -44,6 +41,7 @@ class ModuleManager
     ConnectedModule *getModule(uint8_t moduleID);
     void printPuzzleGrid();
     void tryFitPuzzlePiece(ConnectedModule *connectedModule);
+    void placePuzzlePiece(ConnectedModule *newConnectedModule, uint8_t firstFreeX, uint8_t firstFreeY);
 
     public:
     ModuleManager();

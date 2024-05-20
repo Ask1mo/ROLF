@@ -114,8 +114,20 @@ void ModuleManager::printPuzzleGrid()
                 Serial.print(stupidID);
                 break;
 
-                case PUZZLEPIECE_TYPE_PIPE:
-                Serial.print("P");
+                case PUZZLEPIECE_TYPE_PIPE_FORWARDBACKWARD:
+                Serial.print("PY");
+                break;
+
+                case PUZZLEPIECE_TYPE_PIPE_LEFTRIGHT:
+                Serial.print("PX");
+                break;
+
+                case PUZZLEPIECE_TYPE_PIPE_UPDOWN:
+                Serial.print("PZ");
+                break;
+
+                default:
+                Serial.print("??");
                 break;
             }
             Serial.print(":");
@@ -141,20 +153,32 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
     // 1. Find the piece on the board that the new module should connect to
     for (uint8_t i = 0; i < connectedModules.size(); i++)
     {
-        //Skip the module that is being placed (Self)
-        if (connectedModules[i]->getModuleID() == newConnectedModule->getModuleID()) continue; 
-
-        //Find a module that has a neighbor that is the module that is being placed
-        if(connectedModules[i]->getPuzzlePlaced())
+        
+        if (connectedModules[i]->getModuleID() == newConnectedModule->getModuleID()) continue; //Skip the module that is being placed (Self)
+        if(!connectedModules[i]->getPuzzlePlaced()) continue; //Skip modules that aren't already placed on the board
+        
         {
+            //Find a module that has a neighbor that is the module that is being placed
             uint8_t originalPieceConnectorDirection = connectedModules[i]->checkHasNeighbor(newConnectedModule->getModuleID());
             if(originalPieceConnectorDirection != DIRECTION_NONE)
             {
-                //Find the side of the old module on which the new module should be placed (In compassconnector data) Get a copy of said data
-                //Note: pipe length is not needed for this operation, since you should check the grid for the pipes that are already placed
+                //Find the side of the old module on which the new module should be placed
                 CompassConnector originalPieceConnectorData =  connectedModules[i]->getConnectorInfo(originalPieceConnectorDirection); //Conains a rotation adjusted direction to which the new module should be placed
-
-                //We now have the relevant data from the original piece (The rotation adjusted side on the original piece on which the new piece should be placed)
+        
+                //Find the location of the old module on the board
+                uint8_t originalPieceRow = 0;
+                uint8_t originalPieceColumn = 0;
+                for (uint8_t i = 0; i < TEMP_PUZZLEGRIDSIZE; i++)
+                {
+                    for (uint8_t j = 0; j < TEMP_PUZZLEGRIDSIZE; j++)
+                    {
+                        if (puzzlePieces[i][j].parentModule == connectedModules[i] && puzzlePieces[i][j].pieceType == PUZZLEPIECE_TYPE_HEART)
+                        {
+                            originalPieceRow = i;
+                            originalPieceColumn = j;
+                        }
+                    }
+                }
 
                 //Rotate the new module to the correct orientation so it can connect to the existing piece
                 switch (originalPieceConnectorData.rotationCompensatedDirection)
@@ -309,28 +333,10 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                     }
                     break;
                 }
-            
-
-                //Find the location of the old module on the board
-                uint8_t originalPieceRow = 0;
-                uint8_t originalPieceColumn = 0;
-                for (uint8_t i = 0; i < TEMP_PUZZLEGRIDSIZE; i++)
-                {
-                    for (uint8_t j = 0; j < TEMP_PUZZLEGRIDSIZE; j++)
-                    {
-                        if (puzzlePieces[i][j].parentModule == connectedModules[i] && puzzlePieces[i][j].pieceType == PUZZLEPIECE_TYPE_HEART)
-                        {
-                            originalPieceRow = i;
-                            originalPieceColumn = j;
-                        }
-                    }
-                }
-
-
-                //Place new module on the board
+    
+                //Calculate the location where the new heart piece should be placed on the board
                 uint8_t firstFreeX = 0;
                 uint8_t firstFreeY = 0;
-
                 switch (originalPieceConnectorData.rotationCompensatedDirection)
                 {
                     case DIRECTION_NORTH: //If the new module should be placed on the north side of the old module
@@ -339,7 +345,7 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                         firstFreeY = originalPieceColumn;
                         //add pipe length on the south side of the new module
                         CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(DIRECTION_SOUTH);
-                        if (newPieceConnectorData.basePipe =! BASE_PIPE_ENDCAP)firstFreeX += newPieceConnectorData.basePipe; //If the new module has a pipe on the south side
+                        firstFreeX += newPieceConnectorData.basePipe; //If the new module has a pipe on the south side
                     }
                     break;
                     case DIRECTION_EAST: //If the new module should be placed on the east side of the old module
@@ -347,7 +353,7 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                         firstFreeX = originalPieceRow;
                         firstFreeY = originalPieceColumn + 1;
                         CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(DIRECTION_WEST);
-                        if (newPieceConnectorData.basePipe =! BASE_PIPE_ENDCAP)firstFreeY += newPieceConnectorData.basePipe; //If the new module has a pipe on the west side
+                        firstFreeY += newPieceConnectorData.basePipe; //If the new module has a pipe on the west side
                     }
                     break;
                     case DIRECTION_SOUTH: //If the new module should be placed on the south side of the old module
@@ -355,7 +361,7 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                         firstFreeX = originalPieceRow + 1;
                         firstFreeY = originalPieceColumn;
                         CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(DIRECTION_NORTH);
-                        if (newPieceConnectorData.basePipe =! BASE_PIPE_ENDCAP)firstFreeX += newPieceConnectorData.basePipe; //If the new module has a pipe on the north side
+                        firstFreeX += newPieceConnectorData.basePipe; //If the new module has a pipe on the north side
                     }
                     break;
                     case DIRECTION_WEST: //If the new module should be placed on the west side of the old module
@@ -363,45 +369,13 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                         firstFreeX = originalPieceRow;
                         firstFreeY = originalPieceColumn - 1;
                         CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(DIRECTION_EAST);
-                        if (newPieceConnectorData.basePipe =! BASE_PIPE_ENDCAP)firstFreeY += newPieceConnectorData.basePipe; //If the new module has a pipe on the east side
+                        firstFreeY += newPieceConnectorData.basePipe; //If the new module has a pipe on the east side
                     }
                     break;
                 }
 
-                //We now have all the data to place the heart piece on the board
-                puzzlePieces[firstFreeX][firstFreeY].parentModule = newConnectedModule;
-                puzzlePieces[firstFreeX][firstFreeY].pieceType = PUZZLEPIECE_TYPE_HEART;
-
-                //Now place the pipes on the board from the new module
-                for (uint8_t i = 0; i < DIRECTIONS; i++)
-                {
-                    CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(i);
-                    if (newPieceConnectorData.neighborAdress != ADDR_NONE)
-                    {
-                        for (uint8_t i = 0; i < newPieceConnectorData.basePipe; i++)
-                        {
-                            switch (i)
-                            {
-                                case DIRECTION_NORTH:
-                                puzzlePieces[firstFreeX - i][firstFreeY].pieceType = BASE_PIPE_FORWARDBACKWARD;
-                                break;
-
-                                case DIRECTION_EAST:
-                                puzzlePieces[firstFreeX][firstFreeY + i].pieceType = BASE_PIPE_LEFTRIGHT;
-                                break;
-
-                                case DIRECTION_SOUTH:
-                                puzzlePieces[firstFreeX + i][firstFreeY].pieceType = BASE_PIPE_FORWARDBACKWARD;
-                                break;
-
-                                case DIRECTION_WEST:
-                                puzzlePieces[firstFreeX][firstFreeY - i].pieceType = BASE_PIPE_LEFTRIGHT;
-                                break;
-                            }
-                        }
-                        
-                    }
-                }
+                placePuzzlePiece(newConnectedModule, firstFreeX, firstFreeY);
+                return;
             }
         }
     }
@@ -413,7 +387,75 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
 
 }
 
-//Functions needed:
+void ModuleManager::placePuzzlePiece(ConnectedModule *newConnectedModule, uint8_t firstFreeX, uint8_t firstFreeY)
+{
+    Serial.print("Placing puzzle piece ");
+    Serial.println(newConnectedModule->getModuleID());
+
+    //Place the new heart piece on the board
+                puzzlePieces[firstFreeX][firstFreeY].parentModule = newConnectedModule;
+                puzzlePieces[firstFreeX][firstFreeY].pieceType = PUZZLEPIECE_TYPE_HEART;
+
+                //Place pipes from heart piece on the board
+                for (uint8_t i = 0; i < DIRECTIONS; i++)
+                {
+                    
+                    CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(i);
+                    Serial.print("Checking direction ");
+                    Serial.print(i);
+                    Serial.print(" - has pipe with length ");
+                    Serial.println(newPieceConnectorData.basePipe);
+
+                        for (uint8_t j = 1; j < newPieceConnectorData.basePipe; j++)
+                        {
+                            Serial.print("Placing pipe on the board ");
+                            Serial.println(j);
+                            
+                            switch (i)
+                            {
+                                case DIRECTION_NORTH:
+                                puzzlePieces[firstFreeX - j][firstFreeY].pieceType = PUZZLEPIECE_TYPE_PIPE_FORWARDBACKWARD;
+                                Serial.print("Placing pipe on the north side [");
+                                Serial.print(firstFreeX - j);
+                                Serial.print("][");
+                                Serial.print(firstFreeY);
+                                Serial.println("]");
+                                break;
+
+                                case DIRECTION_EAST:
+                                puzzlePieces[firstFreeX][firstFreeY + j].pieceType = PUZZLEPIECE_TYPE_PIPE_LEFTRIGHT;
+                                Serial.print("Placing pipe on the east side [");
+                                Serial.print(firstFreeX);
+                                Serial.print("][");
+                                Serial.print(firstFreeY + j);
+                                Serial.println("]");
+                                break;
+
+                                case DIRECTION_SOUTH:
+                                puzzlePieces[firstFreeX + j][firstFreeY].pieceType = PUZZLEPIECE_TYPE_PIPE_FORWARDBACKWARD;
+                                Serial.print("Placing pipe on the south side [");
+                                Serial.print(firstFreeX + j);
+                                Serial.print("][");
+                                Serial.print(firstFreeY);
+                                Serial.println("]");
+                                break;
+
+                                case DIRECTION_WEST:
+                                puzzlePieces[firstFreeX][firstFreeY - j].pieceType = PUZZLEPIECE_TYPE_PIPE_LEFTRIGHT;
+                                Serial.print("Placing pipe on the west side [");
+                                Serial.print(firstFreeX);
+                                Serial.print("][");
+                                Serial.print(firstFreeY - j);
+                                Serial.println("]");
+                                break;
+                            }
+                        }
+                        
+            
+                }
+                newConnectedModule->setPuzzlePlaced(true);
+                Serial.println("Puzzle piece placed");
+}
 
 
 
@@ -425,6 +467,15 @@ void ModuleManager::tick()
     {
         lastMillis_PuzzleDraw = millis();
         printPuzzleGrid();
+    }
+
+    if (boardIsEmpty)
+    {
+        if (connectedModules.size() > 0)
+        {
+            placePuzzlePiece(connectedModules[0], TEMP_PUZZLEGRIDSIZE/2, TEMP_PUZZLEGRIDSIZE/2);
+            boardIsEmpty = false;
+        }
     }
 
 
