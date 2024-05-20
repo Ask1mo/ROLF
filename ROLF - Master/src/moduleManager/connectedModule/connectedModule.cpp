@@ -90,6 +90,21 @@ CompassConnector ConnectedModule::getConnectorInfo(uint8_t direction)
     }
     return compassConnectors[direction];
 }
+CompassConnector ConnectedModule::getConnectorInfo_RotationAdjusted(uint8_t rotationAdjustedDirection)
+{
+    if (rotationAdjustedDirection >= DIRECTIONS)
+    {
+        Serial.println("ConnectedModule::getConnectorInfo_RotationAdjusted: Invalid direction");
+        return {0, 0, 0, 0};
+    }
+    for (uint8_t i = 0; i < DIRECTIONS; i++)
+    {
+        if (compassConnectors[i].rotationCompensatedDirection == rotationAdjustedDirection)
+        {
+            return compassConnectors[i];
+        }
+    }
+}
 
 void ConnectedModule::rotate(uint8_t rotation)
 {

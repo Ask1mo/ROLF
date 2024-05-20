@@ -18,9 +18,7 @@
 //Bit 0b1: N/A
 //Bit 0: N/A
 
-#define BASE_PIPE_UNKNOWN 0
-#
-
+#define BASE_PIPE_UNKNOWN               0
 #define BASE_PIPE_FORWARDBACKWARD       251
 #define BASE_PIPE_LEFTRIGHT             252
 #define BASE_PIPE_UPDOWN                253

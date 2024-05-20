@@ -134,18 +134,8 @@ void ModuleManager::printPuzzleGrid()
 }
 void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
 {
-    //This function adds a connectedModule (heart piece) to the puzzle grid in the form of a Puzzle piece . It also adds the connectedModule's pipes to the puzzle grid as puzzle pieces.
-    //Before a module can be added to the grid, The required rotation has to be calculated. (If Module 1's east pipe is connected to module 2's north pipe.  module 2 has to be rotated 90 degrees counter clockwise)
-    //Before placing a module you need to "Scout" if the heart and all pipe pieces can be placed. If not, the module should not be placed.
-    //Also, if the board is empty, the first piece should be placed in the middle of the board. But this is not done in the tryFitPuzzlePiece() function, but in the tick() function.
-    //If the board is not empty, the module should be placed in a way that it connects to the existing pieces on the board:
-    // 1. Find the piece on the board that the new module should connect to
-    // 2. Rotate the module to the correct orientation so it can connect to the existing piece
-    // 3. Scout the board to see if the module can be placed (Take the led pipes that come out of the new and old heart pieces into account)
-    // 4. If the module can be placed, place it on the board together with the led pipes that come out of the heart piece
-
-
-    Serial.println("Trying to fit puzzle piece");
+    Serial.print("Trying to fit puzzle piece ");
+    Serial.println(newConnectedModule->getModuleID());
 
     //Implementation:
     // 1. Find the piece on the board that the new module should connect to
@@ -166,36 +156,40 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
 
                 //We now have the relevant data from the original piece (The rotation adjusted side on the original piece on which the new piece should be placed)
 
-
-                /*!!! === !!! ASK READ THIS. THE TEXT HERE IS COMPLETELY FUCKED. DOUBLE CHECK IT AND CORRECT IT === !!!*/
+                //Rotate the new module to the correct orientation so it can connect to the existing piece
                 switch (originalPieceConnectorData.rotationCompensatedDirection)
                 {
                     case DIRECTION_NORTH:
                     //The new module should be placed on the north side of the old module
+
                     //Check the rotation needed on the new module
-                    switch (newConnectedModule->checkHasNeighbor(connectedModules[i]->getModuleID()))
+                    switch (newConnectedModule->checkHasNeighbor(connectedModules[i]->getModuleID()))//Returns the direction to which the old module is relative to the new module.
                     {
                         case DIRECTION_NORTH:
-                        //The old module is placed on the north side of the old module.
-                        //Coming from the north (opposite direction) new module should be rotated 180 degrees
+                        //The new module is placed on the north side of the old module.
+                        //The old module is placed on the north side of the new module.
+                        //The new module should be rotated 180 degrees. (opposite direction)
                         newConnectedModule->rotate(ROTATION_180Deg);
                         break;
 
                         case DIRECTION_EAST:
-                        //The old module is placed on the east side of the old module
-                        //Coming from the east (left side) new module should be rotated 90 degrees counter clockwise
+                        //The new module is placed on the north side of the old module
+                        //The old module is placed on the east side of the new module.
+                        //The new module should be rotated 90 degrees clockwise
                         newConnectedModule->rotate(ROTATION_90Deg);
                         break;
 
                         case DIRECTION_SOUTH:
-                        //The old module is placed on the south side of the old module
-                        //Coming from the south (connects perfectly without any rotation). No rotation needed
+                        //The new module is placed on the north side of the old module
+                        //The old module is placed on the south side of the new module.
+                        //The new module does not need rotation (Already aligned)
                         newConnectedModule->rotate(ROTATION_0Deg);
                         break;
 
                         case DIRECTION_WEST:
-                        //The old module is placed on the west side of the old module
-                        //Coming from the west (right side) new module should be rotated 90 degrees counterclockwise
+                        //The new module is placed on the north side of the old module
+                        //The old module is placed on the west side of the new module.
+                        //The new module should be rotated 90 degrees counterclockwise
                         newConnectedModule->rotate(ROTATION_270Deg);
                         break;
                     }
@@ -204,35 +198,209 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                     case DIRECTION_EAST:
                     {
                         //The new module should be placed on the east side of the old module
+
                         //Check the rotation needed on the new module
                         switch (newConnectedModule->checkHasNeighbor(connectedModules[i]->getModuleID()))
                         {
                             case DIRECTION_NORTH:
-                            //The old module is placed on the north side of the old module.
-                            //Coming from the north (right side) new module should be rotated 90 degrees counterclockwise
+                            //The new module is placed on the east side of the old module.
+                            //The old module is placed on the north side of the new module.
+                            //The new module should be rotated 90 degrees counterclockwise
                             newConnectedModule->rotate(ROTATION_270Deg);
                             break;
 
                             case DIRECTION_EAST:
-                            //The old module is placed on the east side of the old module
-                            //Coming from the east (opposite direction) new module should be rotated 180 degrees
+                            //The new module is placed on the east side of the old module.
+                            //The old module is placed on the east side of the new module.
+                            //The new module should be rotated 180 degrees. (opposite direction)
                             newConnectedModule->rotate(ROTATION_180Deg);
                             break;
 
                             case DIRECTION_SOUTH:
-                            //The old module is placed on the south side of the old module
-                            //Coming from the south (left side) new module should be rotated 90 degrees clockwise
+                            //The new module is placed on the east side of the old module.
+                            //The old module is placed on the south side of the new module.
+                            //The new module should be rotated 90 degrees clockwise
                             newConnectedModule->rotate(ROTATION_90Deg);
                             break;
 
                             case DIRECTION_WEST:
-                            //The old module is placed on the west side of the old module
-                            //Coming from the west (connects perfectly without any rotation). No rotation needed
+                            //The new module is placed on the east side of the old module.
+                            //The old module is placed on the west side of the new module.
+                            //The new module does not need rotation (Already aligned)
                             newConnectedModule->rotate(ROTATION_0Deg);
                             break;
                         }
                     }
                     break;
+
+                    case DIRECTION_SOUTH:
+                    {
+                        //The new module should be placed on the south side of the old module
+
+                        //Check the rotation needed on the new module
+                        switch (newConnectedModule->checkHasNeighbor(connectedModules[i]->getModuleID()))
+                        {
+                            case DIRECTION_NORTH:
+                            //The new module is placed on the south side of the old module.
+                            //The old module is placed on the north side of the new module.
+                            //The new module does not need rotation (Already aligned)
+                            newConnectedModule->rotate(ROTATION_0Deg);
+                            break;
+
+                            case DIRECTION_EAST:
+                            //The new module is placed on the south side of the old module.
+                            //The old module is placed on the east side of the new module.
+                            //The new module should be rotated 90 degrees counterclockwise
+                            newConnectedModule->rotate(ROTATION_270Deg);
+                            break;
+
+                            case DIRECTION_SOUTH:
+                            //The new module is placed on the south side of the old module.
+                            //The old module is placed on the south side of the new module.
+                            //The new module should be rotated 180 degrees. (opposite direction)
+                            newConnectedModule->rotate(ROTATION_180Deg);
+                            break;
+
+                            case DIRECTION_WEST:
+                            //The new module is placed on the south side of the old module.
+                            //The old module is placed on the west side of the new module.
+                            //The new module should be rotated 90 degrees clockwise
+                            newConnectedModule->rotate(ROTATION_90Deg);
+                            break;
+                        }
+                    }
+                    break;
+
+                    case DIRECTION_WEST:
+                    {
+                        //The new module should be placed on the west side of the old module
+
+                        //Check the rotation needed on the new module
+                        switch (newConnectedModule->checkHasNeighbor(connectedModules[i]->getModuleID()))
+                        {
+                            case DIRECTION_NORTH:
+                            //The new module is placed on the west side of the old module.
+                            //The old module is placed on the north side of the new module.
+                            //The new module should be rotated 90 degrees clockwise
+                            newConnectedModule->rotate(ROTATION_90Deg);
+                            break;
+
+                            case DIRECTION_EAST:
+                            //The new module is placed on the west side of the old module.
+                            //The old module is placed on the east side of the new module.
+                            //The new module does not need rotation (Already aligned)
+                            newConnectedModule->rotate(ROTATION_0Deg);
+                            break;
+
+                            case DIRECTION_SOUTH:
+                            //The new module is placed on the west side of the old module.
+                            //The old module is placed on the south side of the new module.
+                            //The new module should be rotated 90 degrees counterclockwise
+                            newConnectedModule->rotate(ROTATION_270Deg);
+                            break;
+
+                            case DIRECTION_WEST:
+                            //The new module is placed on the west side of the old module.
+                            //The old module is placed on the west side of the new module.
+                            //The new module should be rotated 180 degrees. (opposite direction)
+                            newConnectedModule->rotate(ROTATION_180Deg);
+                            break;
+                        }
+                    }
+                    break;
+                }
+            
+
+                //Find the location of the old module on the board
+                uint8_t originalPieceRow = 0;
+                uint8_t originalPieceColumn = 0;
+                for (uint8_t i = 0; i < TEMP_PUZZLEGRIDSIZE; i++)
+                {
+                    for (uint8_t j = 0; j < TEMP_PUZZLEGRIDSIZE; j++)
+                    {
+                        if (puzzlePieces[i][j].parentModule == connectedModules[i] && puzzlePieces[i][j].pieceType == PUZZLEPIECE_TYPE_HEART)
+                        {
+                            originalPieceRow = i;
+                            originalPieceColumn = j;
+                        }
+                    }
+                }
+
+
+                //Place new module on the board
+                uint8_t firstFreeX = 0;
+                uint8_t firstFreeY = 0;
+
+                switch (originalPieceConnectorData.rotationCompensatedDirection)
+                {
+                    case DIRECTION_NORTH: //If the new module should be placed on the north side of the old module
+                    {
+                        firstFreeX = originalPieceRow - 1;
+                        firstFreeY = originalPieceColumn;
+                        //add pipe length on the south side of the new module
+                        CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(DIRECTION_SOUTH);
+                        if (newPieceConnectorData.basePipe =! BASE_PIPE_ENDCAP)firstFreeX += newPieceConnectorData.basePipe; //If the new module has a pipe on the south side
+                    }
+                    break;
+                    case DIRECTION_EAST: //If the new module should be placed on the east side of the old module
+                    {
+                        firstFreeX = originalPieceRow;
+                        firstFreeY = originalPieceColumn + 1;
+                        CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(DIRECTION_WEST);
+                        if (newPieceConnectorData.basePipe =! BASE_PIPE_ENDCAP)firstFreeY += newPieceConnectorData.basePipe; //If the new module has a pipe on the west side
+                    }
+                    break;
+                    case DIRECTION_SOUTH: //If the new module should be placed on the south side of the old module
+                    {
+                        firstFreeX = originalPieceRow + 1;
+                        firstFreeY = originalPieceColumn;
+                        CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(DIRECTION_NORTH);
+                        if (newPieceConnectorData.basePipe =! BASE_PIPE_ENDCAP)firstFreeX += newPieceConnectorData.basePipe; //If the new module has a pipe on the north side
+                    }
+                    break;
+                    case DIRECTION_WEST: //If the new module should be placed on the west side of the old module
+                    {
+                        firstFreeX = originalPieceRow;
+                        firstFreeY = originalPieceColumn - 1;
+                        CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(DIRECTION_EAST);
+                        if (newPieceConnectorData.basePipe =! BASE_PIPE_ENDCAP)firstFreeY += newPieceConnectorData.basePipe; //If the new module has a pipe on the east side
+                    }
+                    break;
+                }
+
+                //We now have all the data to place the heart piece on the board
+                puzzlePieces[firstFreeX][firstFreeY].parentModule = newConnectedModule;
+                puzzlePieces[firstFreeX][firstFreeY].pieceType = PUZZLEPIECE_TYPE_HEART;
+
+                //Now place the pipes on the board from the new module
+                for (uint8_t i = 0; i < DIRECTIONS; i++)
+                {
+                    CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(i);
+                    if (newPieceConnectorData.neighborAdress != ADDR_NONE)
+                    {
+                        for (uint8_t i = 0; i < newPieceConnectorData.basePipe; i++)
+                        {
+                            switch (i)
+                            {
+                                case DIRECTION_NORTH:
+                                puzzlePieces[firstFreeX - i][firstFreeY].pieceType = BASE_PIPE_FORWARDBACKWARD;
+                                break;
+
+                                case DIRECTION_EAST:
+                                puzzlePieces[firstFreeX][firstFreeY + i].pieceType = BASE_PIPE_LEFTRIGHT;
+                                break;
+
+                                case DIRECTION_SOUTH:
+                                puzzlePieces[firstFreeX + i][firstFreeY].pieceType = BASE_PIPE_FORWARDBACKWARD;
+                                break;
+
+                                case DIRECTION_WEST:
+                                puzzlePieces[firstFreeX][firstFreeY - i].pieceType = BASE_PIPE_LEFTRIGHT;
+                                break;
+                            }
+                        }
+                        
+                    }
                 }
             }
         }
