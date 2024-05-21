@@ -166,16 +166,37 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                 CompassConnector originalPieceConnectorData =  connectedModules[i]->getConnectorInfo(originalPieceConnectorDirection); //Conains a rotation adjusted direction to which the new module should be placed
         
                 //Find the location of the old module on the board
+                Serial.println("Calculating X and Y of the old piece");
                 uint8_t originalPieceRow = 0;
                 uint8_t originalPieceColumn = 0;
                 for (uint8_t i = 0; i < TEMP_PUZZLEGRIDSIZE; i++)
                 {
                     for (uint8_t j = 0; j < TEMP_PUZZLEGRIDSIZE; j++)
                     {
-                        if (puzzlePieces[i][j].parentModule == connectedModules[i] && puzzlePieces[i][j].pieceType == PUZZLEPIECE_TYPE_HEART)
+                        if (puzzlePieces[i][j].parentModule != NULL)
                         {
-                            originalPieceRow = i;
-                            originalPieceColumn = j;
+                            if (puzzlePieces[i][j].parentModule->getModuleID() == connectedModules[i]->getModuleID())
+                            {
+                                Serial.print("Found piece with ID match at [");
+                                Serial.print(i);
+                                Serial.print("][");
+                                Serial.print(j);
+                                Serial.println("]");
+                                if (puzzlePieces[i][j].pieceType == PUZZLEPIECE_TYPE_HEART)
+                                {
+                                    originalPieceRow = i;
+                                    originalPieceColumn = j;
+                                    Serial.print("Found old piece at [");
+                                    Serial.print(originalPieceRow);
+                                    Serial.print("][");
+                                    Serial.print(originalPieceColumn);
+                                    Serial.println("]");
+                                }
+                                else
+                                {
+                                    Serial.println("Error: Found piece with pointer match, but it is not a heart piece");
+                                }
+                            }
                         }
                     }
                 }
@@ -333,7 +354,8 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                     }
                     break;
                 }
-    
+
+                Serial.println("Calculating X and Y of the new piece");
                 //Calculate the location where the new heart piece should be placed on the board
                 uint8_t firstFreeX = 0;
                 uint8_t firstFreeY = 0;
@@ -373,18 +395,16 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                     }
                     break;
                 }
-
+                Serial.print("Coordinates to place new piece: [");
+                Serial.print(firstFreeX);
+                Serial.print("][");
+                Serial.print(firstFreeY);
+                Serial.println("]");
                 placePuzzlePiece(newConnectedModule, firstFreeX, firstFreeY);
                 return;
             }
         }
     }
-
-
-
-
-    
-
 }
 
 void ModuleManager::placePuzzlePiece(ConnectedModule *newConnectedModule, uint8_t firstFreeX, uint8_t firstFreeY)
@@ -395,9 +415,10 @@ void ModuleManager::placePuzzlePiece(ConnectedModule *newConnectedModule, uint8_
     //Place the new heart piece on the board
                 puzzlePieces[firstFreeX][firstFreeY].parentModule = newConnectedModule;
                 puzzlePieces[firstFreeX][firstFreeY].pieceType = PUZZLEPIECE_TYPE_HEART;
+                editPuzzleGridPart
 
                 //Place pipes from heart piece on the board
-                for (uint8_t i = 0; i < DIRECTIONS; i++)
+                for (uint8_t i = 1; i <= DIRECTIONS; i++)
                 {
                     
                     CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(i);
@@ -406,7 +427,7 @@ void ModuleManager::placePuzzlePiece(ConnectedModule *newConnectedModule, uint8_
                     Serial.print(" - has pipe with length ");
                     Serial.println(newPieceConnectorData.basePipe);
 
-                        for (uint8_t j = 1; j < newPieceConnectorData.basePipe; j++)
+                        for (uint8_t j = 1; j <= newPieceConnectorData.basePipe; j++)
                         {
                             Serial.print("Placing pipe on the board ");
                             Serial.println(j);
@@ -414,39 +435,19 @@ void ModuleManager::placePuzzlePiece(ConnectedModule *newConnectedModule, uint8_
                             switch (i)
                             {
                                 case DIRECTION_NORTH:
-                                puzzlePieces[firstFreeX - j][firstFreeY].pieceType = PUZZLEPIECE_TYPE_PIPE_FORWARDBACKWARD;
-                                Serial.print("Placing pipe on the north side [");
-                                Serial.print(firstFreeX - j);
-                                Serial.print("][");
-                                Serial.print(firstFreeY);
-                                Serial.println("]");
+                                editPuzzleGridPart(firstFreeX - j, firstFreeY, newConnectedModule, PUZZLEPIECE_TYPE_PIPE_FORWARDBACKWARD);
                                 break;
 
                                 case DIRECTION_EAST:
-                                puzzlePieces[firstFreeX][firstFreeY + j].pieceType = PUZZLEPIECE_TYPE_PIPE_LEFTRIGHT;
-                                Serial.print("Placing pipe on the east side [");
-                                Serial.print(firstFreeX);
-                                Serial.print("][");
-                                Serial.print(firstFreeY + j);
-                                Serial.println("]");
+                                editPuzzleGridPart(firstFreeX, firstFreeY + j, newConnectedModule, PUZZLEPIECE_TYPE_PIPE_LEFTRIGHT);
                                 break;
 
                                 case DIRECTION_SOUTH:
-                                puzzlePieces[firstFreeX + j][firstFreeY].pieceType = PUZZLEPIECE_TYPE_PIPE_FORWARDBACKWARD;
-                                Serial.print("Placing pipe on the south side [");
-                                Serial.print(firstFreeX + j);
-                                Serial.print("][");
-                                Serial.print(firstFreeY);
-                                Serial.println("]");
+                                editPuzzleGridPart(firstFreeX + j, firstFreeY, newConnectedModule, PUZZLEPIECE_TYPE_PIPE_FORWARDBACKWARD);
                                 break;
 
                                 case DIRECTION_WEST:
-                                puzzlePieces[firstFreeX][firstFreeY - j].pieceType = PUZZLEPIECE_TYPE_PIPE_LEFTRIGHT;
-                                Serial.print("Placing pipe on the west side [");
-                                Serial.print(firstFreeX);
-                                Serial.print("][");
-                                Serial.print(firstFreeY - j);
-                                Serial.println("]");
+                                editPuzzleGridPart(firstFreeX, firstFreeY - j, newConnectedModule, PUZZLEPIECE_TYPE_PIPE_LEFTRIGHT);
                                 break;
                             }
                         }
@@ -457,6 +458,24 @@ void ModuleManager::placePuzzlePiece(ConnectedModule *newConnectedModule, uint8_
                 Serial.println("Puzzle piece placed");
 }
 
+void ModuleManager::editPuzzleGridPart(uint8_t x, uint8_t y, ConnectedModule *parentModule, uint8_t pieceType)
+{
+    Serial.print("Editing puzzle grid part [");
+    Serial.print(x);
+    Serial.print("][");
+    Serial.print(y);
+    Serial.print("] Type: ");
+    Serial.println(pieceType);
+
+    if (x < 0 || x >= TEMP_PUZZLEGRIDSIZE || y < 0 || y >= TEMP_PUZZLEGRIDSIZE)
+    {
+        Serial.println("Error: Out of bounds");
+        return;
+    }
+
+    puzzlePieces[x][y].parentModule = parentModule;
+    puzzlePieces[x][y].pieceType = pieceType;
+}
 
 
 //Public

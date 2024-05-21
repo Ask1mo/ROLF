@@ -42,6 +42,7 @@ class ModuleManager
     void printPuzzleGrid();
     void tryFitPuzzlePiece(ConnectedModule *connectedModule);
     void placePuzzlePiece(ConnectedModule *newConnectedModule, uint8_t firstFreeX, uint8_t firstFreeY);
+    void editPuzzleGridPart(uint8_t x, uint8_t y, ConnectedModule *parentModule, uint8_t pieceType);
 
     public:
     ModuleManager();
