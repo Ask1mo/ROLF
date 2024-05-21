@@ -91,6 +91,17 @@ void ModuleManager::printPuzzleGrid()
 {
     Serial.println();
     Serial.println("Printing grid:");
+
+    Serial.print("Columns");    
+        for(uint8_t j = 0; j < TEMP_PUZZLEGRIDSIZE; j++)
+        {
+            Serial.print(":");
+            if(j<10) Serial.print(" ");
+            Serial.print(j);
+        }
+        Serial.println();
+
+
     for (uint8_t i = 0; i < TEMP_PUZZLEGRIDSIZE; i++)
     {
         Serial.print("Row ");
@@ -115,11 +126,11 @@ void ModuleManager::printPuzzleGrid()
                 break;
 
                 case PUZZLEPIECE_TYPE_PIPE_FORWARDBACKWARD:
-                Serial.print("PY");
+                Serial.print("||");
                 break;
 
                 case PUZZLEPIECE_TYPE_PIPE_LEFTRIGHT:
-                Serial.print("PX");
+                Serial.print("==");
                 break;
 
                 case PUZZLEPIECE_TYPE_PIPE_UPDOWN:
@@ -169,22 +180,32 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                 Serial.println("Calculating X and Y of the old piece");
                 uint8_t originalPieceRow = 0;
                 uint8_t originalPieceColumn = 0;
-                for (uint8_t i = 0; i < TEMP_PUZZLEGRIDSIZE; i++)
+                for (uint8_t k = 0; k < TEMP_PUZZLEGRIDSIZE; k++)
                 {
                     for (uint8_t j = 0; j < TEMP_PUZZLEGRIDSIZE; j++)
                     {
-                        if (puzzlePieces[i][j].parentModule != NULL)
+                        if (puzzlePieces[k][j].parentModule != NULL)
                         {
-                            if (puzzlePieces[i][j].parentModule->getModuleID() == connectedModules[i]->getModuleID())
+                            Serial.print("Checking piece at [");
+                            Serial.print(k);
+                            Serial.print("][");
+                            Serial.print(j);
+                            Serial.print("] ID: ");
+                            Serial.print(puzzlePieces[k][j].parentModule->getModuleID());
+                            Serial.print(" - Looking for ID: ");
+                            Serial.println(connectedModules[i]->getModuleID());
+
+
+                            if (puzzlePieces[k][j].parentModule->getModuleID() == connectedModules[i]->getModuleID())
                             {
                                 Serial.print("Found piece with ID match at [");
-                                Serial.print(i);
+                                Serial.print(k);
                                 Serial.print("][");
                                 Serial.print(j);
                                 Serial.println("]");
-                                if (puzzlePieces[i][j].pieceType == PUZZLEPIECE_TYPE_HEART)
+                                if (puzzlePieces[k][j].pieceType == PUZZLEPIECE_TYPE_HEART)
                                 {
-                                    originalPieceRow = i;
+                                    originalPieceRow = k;
                                     originalPieceColumn = j;
                                     Serial.print("Found old piece at [");
                                     Serial.print(originalPieceRow);
@@ -197,6 +218,7 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                                     Serial.println("Error: Found piece with pointer match, but it is not a heart piece");
                                 }
                             }
+                            Serial.println("Did not find match");
                         }
                     }
                 }
@@ -355,7 +377,10 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                     break;
                 }
 
-                Serial.println("Calculating X and Y of the new piece");
+                Serial.println("Calculating X and Y of the new piece. Orignal piece coords: ");
+                Serial.print(originalPieceRow);
+                Serial.print(", ");
+                Serial.println(originalPieceColumn);
                 //Calculate the location where the new heart piece should be placed on the board
                 uint8_t firstFreeX = 0;
                 uint8_t firstFreeY = 0;
@@ -363,15 +388,22 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                 {
                     case DIRECTION_NORTH: //If the new module should be placed on the north side of the old module
                     {
+                        Serial.println("Placing on north side of old piece");
                         firstFreeX = originalPieceRow - 1;
                         firstFreeY = originalPieceColumn;
                         //add pipe length on the south side of the new module
                         CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(DIRECTION_SOUTH);
-                        firstFreeX += newPieceConnectorData.basePipe; //If the new module has a pipe on the south side
+                        firstFreeX -= newPieceConnectorData.basePipe; //If the new module has a pipe on the south side
+                        Serial.print("Resulting coordinates: [");
+                        Serial.print(firstFreeX);
+                        Serial.print("][");
+                        Serial.print(firstFreeY);
+                        Serial.println("]");
                     }
                     break;
                     case DIRECTION_EAST: //If the new module should be placed on the east side of the old module
                     {
+                        Serial.println("Placing on east side of old piece");
                         firstFreeX = originalPieceRow;
                         firstFreeY = originalPieceColumn + 1;
                         CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(DIRECTION_WEST);
@@ -380,6 +412,7 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                     break;
                     case DIRECTION_SOUTH: //If the new module should be placed on the south side of the old module
                     {
+                        Serial.println("Placing on south side of old piece");
                         firstFreeX = originalPieceRow + 1;
                         firstFreeY = originalPieceColumn;
                         CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(DIRECTION_NORTH);
@@ -388,10 +421,11 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                     break;
                     case DIRECTION_WEST: //If the new module should be placed on the west side of the old module
                     {
+                        Serial.println("Placing on west side of old piece");
                         firstFreeX = originalPieceRow;
                         firstFreeY = originalPieceColumn - 1;
                         CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(DIRECTION_EAST);
-                        firstFreeY += newPieceConnectorData.basePipe; //If the new module has a pipe on the east side
+                        firstFreeY -= newPieceConnectorData.basePipe; //If the new module has a pipe on the east side
                     }
                     break;
                 }
@@ -415,7 +449,7 @@ void ModuleManager::placePuzzlePiece(ConnectedModule *newConnectedModule, uint8_
     //Place the new heart piece on the board
                 puzzlePieces[firstFreeX][firstFreeY].parentModule = newConnectedModule;
                 puzzlePieces[firstFreeX][firstFreeY].pieceType = PUZZLEPIECE_TYPE_HEART;
-                editPuzzleGridPart
+                editPuzzleGridPart(firstFreeX, firstFreeY, newConnectedModule, PUZZLEPIECE_TYPE_HEART);
 
                 //Place pipes from heart piece on the board
                 for (uint8_t i = 1; i <= DIRECTIONS; i++)
