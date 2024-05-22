@@ -108,16 +108,23 @@ CompassConnector ConnectedModule::getConnectorInfo_RotationAdjusted(uint8_t rota
 
 void ConnectedModule::rotate(uint8_t rotation)
 {
+    Serial.print("Rotating module ");
+    Serial.print(rotation);
+    Serial.println(" times.");
     //Stupid solution, but it works. It just manually rotates the compassConnectors for "i" amount of times. Maybe its good?
-    for (uint8_t i = 0; i < DIRECTIONS; i++)
+    for (uint8_t i = 0; i < DIRECTIONS-2; i++)// NOTE: DOES NOT DO UP/DOWN
     {
         compassConnectors[i].rotationCompensatedDirection = compassConnectors[i].compassDirection; //Reset the rotationCompensatedDirection to the compassDirection.
-        for (uint8_t i = 0; i < rotation; i++)
+        for (uint8_t j = 0; j < rotation; j++)
         {
             compassConnectors[i].rotationCompensatedDirection++;
-            if (compassConnectors[i].rotationCompensatedDirection >= DIRECTION_UP) compassConnectors[i].rotationCompensatedDirection = DIRECTION_NORTH;
+            if (compassConnectors[i].rotationCompensatedDirection > DIRECTION_WEST) compassConnectors[i].rotationCompensatedDirection = DIRECTION_NORTH;
             
         }
+        Serial.print("Rotated direction ");
+        Serial.print(compassConnectors[i].compassDirection);
+        Serial.print(" to ");
+        Serial.println(compassConnectors[i].rotationCompensatedDirection);
     }
     
 }
