@@ -77,11 +77,11 @@ void udp_receive()
       Serial.print("Connection changed at module ");
       Serial.print(moduleAdress);
       Serial.print(": in direction ");
-      Serial.print(direction);
+      Serial.print(directionToString(direction));
       Serial.print(" to module ");
       Serial.print(neighborAdress);
       Serial.print(" on their direction ");
-      Serial.println(neighborDirection);
+      Serial.println(directionToString(neighborDirection));
 
       moduleManager.updateModuleConnection(moduleAdress, direction, neighborAdress, neighborDirection);
     }

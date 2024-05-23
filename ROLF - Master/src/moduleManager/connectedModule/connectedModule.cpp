@@ -1,5 +1,27 @@
 #include "connectedModule.h"
 
+String directionToString(uint8_t direction)
+{
+    switch (direction)
+    {
+        case DIRECTION_NONE:
+        return "None0 ";
+        case DIRECTION_NORTH:
+        return "North1";
+        case DIRECTION_EAST:
+        return "East2 ";
+        case DIRECTION_SOUTH:
+        return "South3";
+        case DIRECTION_WEST:
+        return "West4 ";
+        case DIRECTION_UP:
+        return "Up5   ";
+        case DIRECTION_DOWN:
+        return "Down6 ";
+        default:
+        return "DIRERR";
+    }
+}
 
 //Constructor
 ConnectedModule::ConnectedModule(String macAdress, String ipAdress, uint8_t moduleID, BaseInfo baseInfo)
@@ -45,13 +67,13 @@ String ConnectedModule::getIpAdress()
 
 void ConnectedModule::updateConnection(uint8_t direction, uint8_t neighborID, uint8_t neighborDirection)
 {
-    if (direction >= DIRECTIONS || neighborDirection >= DIRECTIONS)
+    if (direction >= DIRECTIONS || direction == 0 || neighborDirection >= DIRECTIONS)
     {
         Serial.println("ConnectedModule::updateConnection: Invalid direction");
         return;
     }
-    compassConnectors[direction].neighborAdress = neighborID;
-    compassConnectors[direction].neighborDirection = neighborDirection;
+    compassConnectors[direction-1].neighborAdress = neighborID;
+    compassConnectors[direction-1].neighborDirection = neighborDirection;
 }
 
 
@@ -69,31 +91,20 @@ BaseInfo ConnectedModule::getBaseInfo()
     return baseInfo;
 }
 
-uint8_t ConnectedModule::checkHasNeighbor(uint8_t neighborID)
+bool ConnectedModule::checkHasNeighbor(uint8_t neighborID)
 {
-    for (uint8_t i = 1; i < DIRECTION_WEST; i++)
+    for (uint8_t i = 0; i < DIRECTIONS; i++)
     {
         if (compassConnectors[i].neighborAdress == neighborID)
         {
-            return i; //Return the direction of the neighbor.
+            return true; //Return the direction of the neighbor.
         }
     }
     return false;
 }
 
-uint8_t ConnectedModule::checkHasNeighbor_RotationAdjusted(uint8_t neighborID)
-{
-    for (uint8_t i = 1; i < DIRECTION_WEST; i++)
-    {
-        if (compassConnectors[i].neighborAdress == neighborID)
-        {
-            return compassConnectors[i].rotationCompensatedDirection; //Return the direction of the neighbor.
-        }
-    }
-    return false;
-}
 
-CompassConnector ConnectedModule::getConnectorInfo(uint8_t direction)
+/*CompassConnector ConnectedModule::getConnectorInfo(uint8_t direction)
 {
     if (direction >= DIRECTIONS)
     {
@@ -101,22 +112,23 @@ CompassConnector ConnectedModule::getConnectorInfo(uint8_t direction)
         return {0, 0, 0, 0};
     }
     return compassConnectors[direction];
-}
-CompassConnector ConnectedModule::getConnectorInfo_RotationAdjusted(uint8_t rotationAdjustedDirection)
+}*/
+CompassConnector ConnectedModule::getConnectorFromCompensatedDirection(uint8_t compensatedDirection)
 {
-    if (rotationAdjustedDirection >= DIRECTIONS)
+    if (compensatedDirection > DIRECTIONS)
     {
         Serial.println("ConnectedModule::getConnectorInfo_RotationAdjusted: Invalid direction");
         return {0, 0, 0, 0};
     }
     for (uint8_t i = 0; i < DIRECTIONS; i++)
     {
-        if (compassConnectors[i].rotationCompensatedDirection == rotationAdjustedDirection)
+        if (compassConnectors[i].rotationCompensatedDirection == compensatedDirection)
         {
             return compassConnectors[i];
         }
     }
 }
+
 
 void ConnectedModule::rotate(uint8_t rotation)
 {
@@ -134,9 +146,40 @@ void ConnectedModule::rotate(uint8_t rotation)
             
         }
         Serial.print("Rotated direction ");
-        Serial.print(compassConnectors[i].compassDirection);
+        Serial.print(directionToString(compassConnectors[i].compassDirection));
         Serial.print(" to ");
-        Serial.println(compassConnectors[i].rotationCompensatedDirection);
+        Serial.println(directionToString(compassConnectors[i].rotationCompensatedDirection));
     }
     
+}
+
+CompassConnector ConnectedModule::getConnectorFromID(uint8_t neighborID)
+{
+    for (uint8_t i = 0; i < DIRECTIONS; i++)
+    {
+        if (compassConnectors[i].neighborAdress == neighborID)
+        {
+            return compassConnectors[i];
+        }
+    }
+    Serial.println("ERROR: ConnectedModule::getConnectorFromID: No neighbor found with that ID");
+    return {0, 0, 0, 0};
+}
+void ConnectedModule::printConnectors()
+{
+    Serial.print("Printing pipes on module ");
+    Serial.println(moduleID);
+    for (uint8_t i = 0; i < DIRECTIONS; i++)
+    {
+        Serial.print("Direction: ");
+        Serial.print(directionToString(compassConnectors[i].compassDirection));
+        Serial.print(" - CompensatedDirection: ");
+        Serial.print(directionToString(compassConnectors[i].rotationCompensatedDirection));
+        Serial.print(" - Pipe length: ");
+        Serial.print(compassConnectors[i].basePipe);
+        Serial.print(" - NeighborAdress: ");
+        Serial.print(compassConnectors[i].neighborAdress);
+        Serial.print(" - Neighbor's Direction: ");
+        Serial.println(directionToString(compassConnectors[i].neighborDirection));
+    }
 }

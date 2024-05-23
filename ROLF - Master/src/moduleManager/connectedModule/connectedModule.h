@@ -20,6 +20,8 @@
 #define ROTATION_180Deg 2
 #define ROTATION_270Deg 3
 
+String directionToString(uint8_t direction);
+
 struct CompassConnector
 {
   uint8_t compassDirection; //NEWSUD
@@ -64,11 +66,12 @@ class ConnectedModule
     bool getPuzzlePlaced();
     void setPuzzlePlaced(bool puzzlePlaced);
     BaseInfo getBaseInfo();
-    uint8_t checkHasNeighbor(uint8_t neighborID); //Returns the direction of the neighbor if it is connected, otherwise 0.
-    uint8_t checkHasNeighbor_RotationAdjusted(uint8_t neighborID); //Returns the direction of the neighbor if it is connected, otherwise 0.
-    CompassConnector getConnectorInfo(uint8_t direction);
-    CompassConnector getConnectorInfo_RotationAdjusted(uint8_t rotationAdjustedDirection);
+    bool checkHasNeighbor(uint8_t neighborID);
+    //CompassConnector getConnectorInfo(uint8_t direction);
+    CompassConnector getConnectorFromCompensatedDirection(uint8_t compensatedDirection);
+    CompassConnector getConnectorFromID(uint8_t neighborID);
     void rotate(uint8_t rotation);
+    void printConnectors();
 
 };
 

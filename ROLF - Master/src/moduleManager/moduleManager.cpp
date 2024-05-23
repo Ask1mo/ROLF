@@ -87,6 +87,7 @@ ConnectedModule *ModuleManager::getModule(uint8_t moduleID)
     }
     return NULL;
 }
+
 void ModuleManager::printPuzzleGrid()
 {
     Serial.println();
@@ -154,386 +155,395 @@ void ModuleManager::printPuzzleGrid()
         Serial.println();
         
     }
+
+    for (uint8_t i = 0; i < connectedModules.size(); i++)
+        {
+            connectedModules[i]->printConnectors();
+        }
 }
+
+
 void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
 {
-    Serial.print("Trying to fit puzzle piece ");
-    Serial.println(newConnectedModule->getModuleID());
+    ConnectedModule *oldConnectedModule = findOldConnectedModule(newConnectedModule->getModuleID());
+    if (oldConnectedModule == NULL)return;
 
+    //Check if both modules have found each other
+    if (!oldConnectedModule->checkHasNeighbor(newConnectedModule->getModuleID())) return;
+    if (!newConnectedModule->checkHasNeighbor(oldConnectedModule->getModuleID())) return;
+
+    printPuzzleGrid();
+
+    Serial.println();
+    Serial.println("!!!!! ----- ADDING NEW MODULE ----- !!!!!");
+    
+    
+    //Rotate the new module to the correct orientation so it can connect to the existing piece
+    rotateNewModule(newConnectedModule, oldConnectedModule);
+
+    uint8_t x = 0;
+    uint8_t y = 0;
+    getOldModuleCoords(oldConnectedModule->getModuleID(), &x, &y);
+    
+    oldConnectedModule->printConnectors();
+    calculateNewModuleCoords(newConnectedModule, oldConnectedModule, &x, &y);
+
+    Serial.print("Coordinates to place new piece: [");
+    Serial.print(x);
+    Serial.print("][");
+    Serial.print(y);
+    Serial.println("]");
+    placePuzzlePiece(newConnectedModule, x, y);
+
+    Serial.println("!!!!! ----- FINISHED ----- !!!!!");
+    Serial.println();
+
+    printPuzzleGrid();
+
+    return;
+}
+
+
+ConnectedModule *ModuleManager::findOldConnectedModule(uint8_t newModuleID)
+{
     //Implementation:
     // 1. Find the piece on the board that the new module should connect to
     for (uint8_t i = 0; i < connectedModules.size(); i++)
     {
         
-        if (connectedModules[i]->getModuleID() == newConnectedModule->getModuleID()) continue; //Skip the module that is being placed (Self)
+        if (connectedModules[i]->getModuleID() == newModuleID) continue; //Skip the module that is being placed (Self)
         if(!connectedModules[i]->getPuzzlePlaced()) continue; //Skip modules that aren't already placed on the board
         
         {
             //Find a module that has a neighbor that is the module that is being placed
-            uint8_t originalPieceConnectorDirection = connectedModules[i]->checkHasNeighbor_RotationAdjusted(newConnectedModule->getModuleID());
-            if(originalPieceConnectorDirection != DIRECTION_NONE)
+            if(connectedModules[i]->checkHasNeighbor(newModuleID)) return connectedModules[i];
+        }
+    }
+    return NULL;
+}
+    /*
+    for (uint8_t i = 0; i < connectedModules.size(); i++)
+    {
+        if (connectedModules[i]->getModuleID() == newModuleID)
+        {
+            //If the module is found, check if it is already placed on the board
+            if (connectedModules[i]->getPuzzlePlaced())
             {
-                //Find the side of the old module on which the new module should be placed
-                CompassConnector originalPieceConnectorData = connectedModules[i]->getConnectorInfo(originalPieceConnectorDirection); //Conains a rotation adjusted direction to which the new module should be placed
-               
-                //Check if new and old modules have discovered each other on one of their sides. (If this isn't the case, the modules dont know where to connect to each other)
-                if(newConnectedModule->checkHasNeighbor_RotationAdjusted(connectedModules[i]->getModuleID()) == DIRECTION_NONE)
+                //If the module is already placed on the board, remove it from the board
+                for (uint8_t j = 0; j < TEMP_PUZZLEGRIDSIZE; j++)
                 {
-                    Serial.println("Error: New module does not have the old module as a neighbor");
-                    return;
-                }
-                if (connectedModules[i]->checkHasNeighbor_RotationAdjusted(newConnectedModule->getModuleID()) == DIRECTION_NONE)
-                {
-                    Serial.println("Error: Old module does not have the new module as a neighbor");
-                    return;
-                }
-
-                Serial.print("Old module found new module on side ");
-                Serial.println(connectedModules[i]->checkHasNeighbor_RotationAdjusted(newConnectedModule->getModuleID())); //ASK READ THIS YOURE NOT GETTING A ROTATION COMPENSATED DIRECTION!!!
-                Serial.print("New module found old module on side ");
-                Serial.println(newConnectedModule->checkHasNeighbor_RotationAdjusted(connectedModules[i]->getModuleID()));
-
-                //Find the location of the old module on the board
-                Serial.println("Calculating X and Y of the old piece");
-                uint8_t originalPieceRow = 0;
-                uint8_t originalPieceColumn = 0;
-                for (uint8_t k = 0; k < TEMP_PUZZLEGRIDSIZE; k++)
-                {
-                    for (uint8_t j = 0; j < TEMP_PUZZLEGRIDSIZE; j++)
+                    for (uint8_t k = 0; k < TEMP_PUZZLEGRIDSIZE; k++)
                     {
-                        if (puzzlePieces[k][j].parentModule != NULL)
+                        if (puzzlePieces[j][k].parentModule != NULL)
                         {
-                            Serial.print("Checking piece at [");
-                            Serial.print(k);
-                            Serial.print("][");
-                            Serial.print(j);
-                            Serial.print("] ID: ");
-                            Serial.print(puzzlePieces[k][j].parentModule->getModuleID());
-                            Serial.print(" - Looking for ID: ");
-                            Serial.println(connectedModules[i]->getModuleID());
-
-
-                            if (puzzlePieces[k][j].parentModule->getModuleID() == connectedModules[i]->getModuleID())
+                            if (puzzlePieces[j][k].parentModule->getModuleID() == newModuleID)
                             {
-                                Serial.print("Found piece with ID match at [");
-                                Serial.print(k);
-                                Serial.print("][");
-                                Serial.print(j);
-                                Serial.println("]");
-                                if (puzzlePieces[k][j].pieceType == PUZZLEPIECE_TYPE_HEART)
-                                {
-                                    originalPieceRow = k;
-                                    originalPieceColumn = j;
-                                    Serial.print("Found old piece at [");
-                                    Serial.print(originalPieceRow);
-                                    Serial.print("][");
-                                    Serial.print(originalPieceColumn);
-                                    Serial.println("]");
-                                }
-                                else
-                                {
-                                    Serial.println("Error: Found piece with pointer match, but it is not a heart piece");
-                                }
+                                puzzlePieces[j][k].parentModule = NULL;
+                                puzzlePieces[j][k].pieceType = PUZZLEPIECE_TYPE_EMPTY;
                             }
-                            Serial.println("Did not find match");
                         }
                     }
                 }
-
-                Serial.println("Rotating Module");
-                Serial.print("Rotation compensated direction on OLD module to place NEW module on: ");
-                Serial.println(originalPieceConnectorData.rotationCompensatedDirection);
-                Serial.print("Rotation compensated direction on NEW module to place OLD module on: ");
-                Serial.println(newConnectedModule->checkHasNeighbor_RotationAdjusted(connectedModules[i]->getModuleID()));
-                //Rotate the new module to the correct orientation so it can connect to the existing piece
-                switch (originalPieceConnectorData.rotationCompensatedDirection)
-                {
-                    case DIRECTION_NORTH:
-                    //The new module should be placed on the north side of the old module
-                    Serial.println("The new module should be placed on the North side of the old module");
-
-                    //Check the rotation needed on the new module
-                    switch (newConnectedModule->checkHasNeighbor_RotationAdjusted(connectedModules[i]->getModuleID()))//Returns the direction to which the old module is relative to the new module.
-                    {
-                        case DIRECTION_NORTH:
-                        //The new module is placed on the north side of the old module.
-                        //The old module is placed on the north side of the new module.
-                        //The new module should be rotated 180 degrees. (opposite direction)
-                        Serial.println("The old module is placed on the North side of the new module");
-                        newConnectedModule->rotate(ROTATION_180Deg);
-                        break;
-
-                        case DIRECTION_EAST:
-                        //The new module is placed on the north side of the old module
-                        //The old module is placed on the east side of the new module.
-                        //The new module should be rotated 90 degrees clockwise
-                        Serial.println("The old module is placed on the East side of the new module");
-                        newConnectedModule->rotate(ROTATION_90Deg);
-                        break;
-
-                        case DIRECTION_SOUTH:
-                        //The new module is placed on the north side of the old module
-                        //The old module is placed on the south side of the new module.
-                        //The new module does not need rotation (Already aligned)
-                        Serial.println("The old module is placed on the South side of the new module");
-                        newConnectedModule->rotate(ROTATION_0Deg);
-                        break;
-
-                        case DIRECTION_WEST:
-                        //The new module is placed on the north side of the old module
-                        //The old module is placed on the west side of the new module.
-                        //The new module should be rotated 90 degrees counterclockwise
-                        Serial.println("The old module is placed on the West side of the new module");
-                        newConnectedModule->rotate(ROTATION_270Deg);
-                        break;
-                    }
-                    break;
-                    
-                    case DIRECTION_EAST:
-                    {
-                        //The new module should be placed on the east side of the old module
-                        Serial.println("The new module should be placed on the East side of the old module");
-
-                        //Check the rotation needed on the new module
-                        switch (newConnectedModule->checkHasNeighbor_RotationAdjusted(connectedModules[i]->getModuleID()))
-                        {
-                            case DIRECTION_NORTH:
-                            //The new module is placed on the east side of the old module.
-                            //The old module is placed on the north side of the new module.
-                            //The new module should be rotated 90 degrees counterclockwise
-                            Serial.println("The old module is placed on the North side of the new module");
-                            newConnectedModule->rotate(ROTATION_270Deg);
-                            break;
-
-                            case DIRECTION_EAST:
-                            //The new module is placed on the east side of the old module.
-                            //The old module is placed on the east side of the new module.
-                            //The new module should be rotated 180 degrees. (opposite direction)
-                            Serial.println("The old module is placed on the East side of the new module");
-                            newConnectedModule->rotate(ROTATION_180Deg);
-                            break;
-
-                            case DIRECTION_SOUTH:
-                            //The new module is placed on the east side of the old module.
-                            //The old module is placed on the south side of the new module.
-                            //The new module should be rotated 90 degrees clockwise
-                            Serial.println("The old module is placed on the South side of the new module");
-                            newConnectedModule->rotate(ROTATION_90Deg);
-                            break;
-
-                            case DIRECTION_WEST:
-                            //The new module is placed on the east side of the old module.
-                            //The old module is placed on the west side of the new module.
-                            //The new module does not need rotation (Already aligned)
-                            Serial.println("The old module is placed on the West side of the new module");
-                            newConnectedModule->rotate(ROTATION_0Deg);
-                            break;
-                        }
-                    }
-                    break;
-
-                    case DIRECTION_SOUTH:
-                    {
-                        //The new module should be placed on the south side of the old module
-                        Serial.println("The new module should be placed on the South side of the old module");
-
-                        //Check the rotation needed on the new module
-                        switch (newConnectedModule->checkHasNeighbor_RotationAdjusted(connectedModules[i]->getModuleID()))
-                        {
-                            case DIRECTION_NORTH:
-                            //The new module is placed on the south side of the old module.
-                            //The old module is placed on the north side of the new module.
-                            //The new module does not need rotation (Already aligned)
-                            Serial.println("The old module is placed on the North side of the new module");
-                            newConnectedModule->rotate(ROTATION_0Deg);
-                            break;
-
-                            case DIRECTION_EAST:
-                            //The new module is placed on the south side of the old module.
-                            //The old module is placed on the east side of the new module.
-                            //The new module should be rotated 90 degrees counterclockwise
-                            Serial.println("The old module is placed on the East side of the new module");
-                            newConnectedModule->rotate(ROTATION_270Deg);
-                            break;
-
-                            case DIRECTION_SOUTH:
-                            //The new module is placed on the south side of the old module.
-                            //The old module is placed on the south side of the new module.
-                            //The new module should be rotated 180 degrees. (opposite direction)
-                            Serial.println("The old module is placed on the South side of the new module");
-                            newConnectedModule->rotate(ROTATION_180Deg);
-                            break;
-
-                            case DIRECTION_WEST:
-                            //The new module is placed on the south side of the old module.
-                            //The old module is placed on the west side of the new module.
-                            //The new module should be rotated 90 degrees clockwise
-                            Serial.println("The old module is placed on the West side of the new module");
-                            newConnectedModule->rotate(ROTATION_90Deg);
-                            break;
-                        }
-                    }
-                    break;
-
-                    case DIRECTION_WEST:
-                    {
-                        //The new module should be placed on the west side of the old module
-                        Serial.println("The new module should be placed od the West side of the old module");
-
-                        //Check the rotation needed on the new module
-                        switch (newConnectedModule->checkHasNeighbor_RotationAdjusted(connectedModules[i]->getModuleID()))
-                        {
-                            case DIRECTION_NORTH:
-                            //The new module is placed on the west side of the old module.
-                            //The old module is placed on the north side of the new module.
-                            //The new module should be rotated 90 degrees clockwise
-                            Serial.println("The old module is placed on the North side of the new module");
-                            newConnectedModule->rotate(ROTATION_90Deg);
-                            break;
-
-                            case DIRECTION_EAST:
-                            //The new module is placed on the west side of the old module.
-                            //The old module is placed on the east side of the new module.
-                            //The new module does not need rotation (Already aligned)
-                            Serial.println("The old module is placed on the East side of the new module");
-                            newConnectedModule->rotate(ROTATION_0Deg);
-                            break;
-
-                            case DIRECTION_SOUTH:
-                            //The new module is placed on the west side of the old module.
-                            //The old module is placed on the south side of the new module.
-                            //The new module should be rotated 90 degrees counterclockwise
-                            Serial.println("The old module is placed on the South side of the new module");
-                            newConnectedModule->rotate(ROTATION_270Deg);
-                            break;
-
-                            case DIRECTION_WEST:
-                            //The new module is placed on the west side of the old module.
-                            //The old module is placed on the west side of the new module.
-                            //The new module should be rotated 180 degrees. (opposite direction)
-                            Serial.println("The old module is placed on the West side of the new module");
-                            newConnectedModule->rotate(ROTATION_180Deg);
-                            break;
-                        }
-                    }
-                    break;
-                }
-
-                Serial.println("Calculating X and Y of the new piece. Orignal piece coords: ");
-                Serial.print(originalPieceRow);
-                Serial.print(", ");
-                Serial.println(originalPieceColumn);
-                //Calculate the location where the new heart piece should be placed on the board
-                uint8_t firstFreeX = 0;
-                uint8_t firstFreeY = 0;
-                switch (originalPieceConnectorData.rotationCompensatedDirection)
-                {
-                    case DIRECTION_NORTH: //If the new module should be placed on the north side of the old module
-                    {
-                        Serial.println("Placing on north side of old piece");
-                        firstFreeX = originalPieceRow - 1;
-                        firstFreeY = originalPieceColumn;
-                        //add pipe length on the south side of the new module
-                        CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(DIRECTION_SOUTH);
-                        firstFreeX -= newPieceConnectorData.basePipe; //If the new module has a pipe on the south side
-                        Serial.print("Resulting coordinates: [");
-                        Serial.print(firstFreeX);
-                        Serial.print("][");
-                        Serial.print(firstFreeY);
-                        Serial.println("]");
-                    }
-                    break;
-                    case DIRECTION_EAST: //If the new module should be placed on the east side of the old module
-                    {
-                        Serial.println("Placing on east side of old piece");
-                        firstFreeX = originalPieceRow;
-                        firstFreeY = originalPieceColumn + 1;
-                        CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(DIRECTION_WEST);
-                        firstFreeY += newPieceConnectorData.basePipe; //If the new module has a pipe on the west side
-                    }
-                    break;
-                    case DIRECTION_SOUTH: //If the new module should be placed on the south side of the old module
-                    {
-                        Serial.println("Placing on south side of old piece");
-                        firstFreeX = originalPieceRow + 1;
-                        firstFreeY = originalPieceColumn;
-                        CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(DIRECTION_NORTH);
-                        firstFreeX += newPieceConnectorData.basePipe; //If the new module has a pipe on the north side
-                    }
-                    break;
-                    case DIRECTION_WEST: //If the new module should be placed on the west side of the old module
-                    {
-                        Serial.println("Placing on west side of old piece");
-                        firstFreeX = originalPieceRow;
-                        firstFreeY = originalPieceColumn - 1;
-                        CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(DIRECTION_EAST);
-                        firstFreeY -= newPieceConnectorData.basePipe; //If the new module has a pipe on the east side
-                    }
-                    break;
-                }
-                Serial.print("Coordinates to place new piece: [");
-                Serial.print(firstFreeX);
-                Serial.print("][");
-                Serial.print(firstFreeY);
-                Serial.println("]");
-                placePuzzlePiece(newConnectedModule, firstFreeX, firstFreeY);
-                return;
             }
         }
     }
 }
+*/
 
+void ModuleManager::rotateNewModule(ConnectedModule *newConnectedModule, ConnectedModule *oldConnectedModule)
+{
+    CompassConnector oldConnectedModuleMatchingConnector = oldConnectedModule->getConnectorFromID(newConnectedModule->getModuleID());
+    CompassConnector newConnectedModuleMatchingConnector = newConnectedModule->getConnectorFromID(oldConnectedModule->getModuleID());
+    
+    //newConnectedModule->printConnectors();
+    //oldConnectedModule->printConnectors();
+
+    Serial.println("Rotating Module");
+    Serial.print("Rotation compensated direction on OLD module to place NEW module on: ");
+    Serial.println(directionToString(oldConnectedModuleMatchingConnector.rotationCompensatedDirection));
+    Serial.print("Rotation compensated direction on NEW module to place OLD module on: ");
+    Serial.println(directionToString(newConnectedModuleMatchingConnector.rotationCompensatedDirection));
+
+    //Rotate the new module to the correct orientation so it can connect to the existing piece
+    switch (oldConnectedModuleMatchingConnector.rotationCompensatedDirection)
+    {
+        case DIRECTION_NORTH:
+        //The new module should be placed on the north side of the old module
+        Serial.println("The new module should be placed on the North side of the old module");
+        //Check the rotation needed on the new module
+        switch (newConnectedModuleMatchingConnector.rotationCompensatedDirection)//Returns the direction to which the old module is relative to the new module.
+        {
+            case DIRECTION_NORTH:
+            //The new module is placed on the north side of the old module.
+            //The old module is placed on the north side of the new module.
+            //The new module should be rotated 180 degrees. (opposite direction)
+            Serial.println("The old module is placed on the North side of the new module");
+            newConnectedModule->rotate(ROTATION_180Deg);
+            break;
+            case DIRECTION_EAST:
+            //The new module is placed on the north side of the old module
+            //The old module is placed on the east side of the new module.
+            //The new module should be rotated 90 degrees clockwise
+            Serial.println("The old module is placed on the East side of the new module");
+            newConnectedModule->rotate(ROTATION_90Deg);
+            break;
+            case DIRECTION_SOUTH:
+            //The new module is placed on the north side of the old module
+            //The old module is placed on the south side of the new module.
+            //The new module does not need rotation (Already aligned)
+            Serial.println("The old module is placed on the South side of the new module");
+            newConnectedModule->rotate(ROTATION_0Deg);
+            break;
+            case DIRECTION_WEST:
+            //The new module is placed on the north side of the old module
+            //The old module is placed on the west side of the new module.
+            //The new module should be rotated 90 degrees counterclockwise
+            Serial.println("The old module is placed on the West side of the new module");
+            newConnectedModule->rotate(ROTATION_270Deg);
+            break;
+        }
+        break;
+        case DIRECTION_EAST:
+        {
+            //The new module should be placed on the east side of the old module
+            Serial.println("The new module should be placed on the East side of the old module");
+            //Check the rotation needed on the new module
+            switch (newConnectedModuleMatchingConnector.rotationCompensatedDirection)
+            {
+                case DIRECTION_NORTH:
+                //The new module is placed on the east side of the old module.
+                //The old module is placed on the north side of the new module.
+                //The new module should be rotated 90 degrees counterclockwise
+                Serial.println("The old module is placed on the North side of the new module");
+                newConnectedModule->rotate(ROTATION_270Deg);
+                break;
+                case DIRECTION_EAST:
+                //The new module is placed on the east side of the old module.
+                //The old module is placed on the east side of the new module.
+                //The new module should be rotated 180 degrees. (opposite direction)
+                Serial.println("The old module is placed on the East side of the new module");
+                newConnectedModule->rotate(ROTATION_180Deg);
+                break;
+                case DIRECTION_SOUTH:
+                //The new module is placed on the east side of the old module.
+                //The old module is placed on the south side of the new module.
+                //The new module should be rotated 90 degrees clockwise
+                Serial.println("The old module is placed on the South side of the new module");
+                newConnectedModule->rotate(ROTATION_90Deg);
+                break;
+                case DIRECTION_WEST:
+                //The new module is placed on the east side of the old module.
+                //The old module is placed on the west side of the new module.
+                //The new module does not need rotation (Already aligned)
+                Serial.println("The old module is placed on the West side of the new module");
+                newConnectedModule->rotate(ROTATION_0Deg);
+                break;
+            }
+        }
+        break;
+        case DIRECTION_SOUTH:
+        {
+            //The new module should be placed on the south side of the old module
+            Serial.println("The new module should be placed on the South side of the old module");
+            //Check the rotation needed on the new module
+            switch (newConnectedModuleMatchingConnector.rotationCompensatedDirection)
+            {
+                case DIRECTION_NORTH:
+                //The new module is placed on the south side of the old module.
+                //The old module is placed on the north side of the new module.
+                //The new module does not need rotation (Already aligned)
+                Serial.println("The old module is placed on the North side of the new module");
+                newConnectedModule->rotate(ROTATION_0Deg);
+                break;
+                case DIRECTION_EAST:
+                //The new module is placed on the south side of the old module.
+                //The old module is placed on the east side of the new module.
+                //The new module should be rotated 90 degrees counterclockwise
+                Serial.println("The old module is placed on the East side of the new module");
+                newConnectedModule->rotate(ROTATION_270Deg);
+                break;
+                case DIRECTION_SOUTH:
+                //The new module is placed on the south side of the old module.
+                //The old module is placed on the south side of the new module.
+                //The new module should be rotated 180 degrees. (opposite direction)
+                Serial.println("The old module is placed on the South side of the new module");
+                newConnectedModule->rotate(ROTATION_180Deg);
+                break;
+                case DIRECTION_WEST:
+                //The new module is placed on the south side of the old module.
+                //The old module is placed on the west side of the new module.
+                //The new module should be rotated 90 degrees clockwise
+                Serial.println("The old module is placed on the West side of the new module");
+                newConnectedModule->rotate(ROTATION_90Deg);
+                break;
+            }
+        }
+        break;
+        case DIRECTION_WEST:
+        {
+            //The new module should be placed on the west side of the old module
+            Serial.println("The new module should be placed od the West side of the old module");
+            //Check the rotation needed on the new module
+            switch (newConnectedModuleMatchingConnector.rotationCompensatedDirection)
+            {
+                case DIRECTION_NORTH:
+                //The new module is placed on the west side of the old module.
+                //The old module is placed on the north side of the new module.
+                //The new module should be rotated 90 degrees clockwise
+                Serial.println("The old module is placed on the North side of the new module");
+                newConnectedModule->rotate(ROTATION_90Deg);
+                break;
+                case DIRECTION_EAST:
+                //The new module is placed on the west side of the old module.
+                //The old module is placed on the east side of the new module.
+                //The new module does not need rotation (Already aligned)
+                Serial.println("The old module is placed on the East side of the new module");
+                newConnectedModule->rotate(ROTATION_0Deg);
+                break;
+                case DIRECTION_SOUTH:
+                //The new module is placed on the west side of the old module.
+                //The old module is placed on the south side of the new module.
+                //The new module should be rotated 90 degrees counterclockwise
+                Serial.println("The old module is placed on the South side of the new module");
+                newConnectedModule->rotate(ROTATION_270Deg);
+                break;
+                case DIRECTION_WEST:
+                //The new module is placed on the west side of the old module.
+                //The old module is placed on the west side of the new module.
+                //The new module should be rotated 180 degrees. (opposite direction)
+                Serial.println("The old module is placed on the West side of the new module");
+                newConnectedModule->rotate(ROTATION_180Deg);
+                break;
+            }
+        }
+        break;
+    }
+}
+void ModuleManager::getOldModuleCoords(uint8_t oldModuleID, uint8_t *x, uint8_t *y)
+{
+    //Find the location of the old module on the board
+    Serial.println("Searching old module coords");
+    for (uint8_t k = 0; k < TEMP_PUZZLEGRIDSIZE; k++)
+    {
+        for (uint8_t j = 0; j < TEMP_PUZZLEGRIDSIZE; j++)
+        {
+            if (puzzlePieces[k][j].parentModule != NULL)
+            {
+                if (puzzlePieces[k][j].parentModule->getModuleID() == oldModuleID)
+                {
+                    if (puzzlePieces[k][j].pieceType == PUZZLEPIECE_TYPE_HEART)
+                    {
+                        *x = k;
+                        *y = j;
+                        Serial.print("Found old module coords at [");
+                        Serial.print(*x);
+                        Serial.print("][");
+                        Serial.print(*y);
+                        Serial.println("]");
+                        return;
+                    }
+                }
+            }
+        }
+    }
+}
+void ModuleManager::calculateNewModuleCoords(ConnectedModule *newConnectedModule, ConnectedModule *oldConnectedModule, uint8_t *x, uint8_t *y)
+{
+    Serial.println("Calculating X and Y of the new piece. Orignal piece coords: ");
+    Serial.print(*x);
+    Serial.print(", ");
+    Serial.println(*y);
+
+    
+
+    switch (oldConnectedModule->getConnectorFromID(newConnectedModule->getModuleID()).rotationCompensatedDirection) //Base it on the old connector's direction
+    {
+        case DIRECTION_NORTH: //If the new module should be placed on the north side of the old module
+        {
+            Serial.println("Placing on north side of old piece");
+            *x -= 1;
+
+            CompassConnector oldConnectorData = oldConnectedModule->getConnectorFromCompensatedDirection(DIRECTION_NORTH);
+            *x -= oldConnectorData.basePipe; //If the new module has a pipe on the south side
+            CompassConnector newConnectorData = newConnectedModule->getConnectorFromCompensatedDirection(DIRECTION_SOUTH);
+            *x -= newConnectorData.basePipe; //If the new module has a pipe on the south side
+        }
+        break;
+        case DIRECTION_EAST: //If the new module should be placed on the east side of the old module
+        {
+            Serial.println("Placing on east side of old piece");
+            *y += 1;
+            CompassConnector oldConnectorData = oldConnectedModule->getConnectorFromCompensatedDirection(DIRECTION_EAST);
+            *y += oldConnectorData.basePipe; //If the new module has a pipe on the west side
+            CompassConnector newConnectorData = newConnectedModule->getConnectorFromCompensatedDirection(DIRECTION_WEST);
+            *y += newConnectorData.basePipe; //If the new module has a pipe on the west side
+        }
+        break;
+        case DIRECTION_SOUTH: //If the new module should be placed on the south side of the old module
+        {
+            Serial.println("Placing on south side of old piece");
+            *x += 1;
+
+            CompassConnector oldConnectorData = oldConnectedModule->getConnectorFromCompensatedDirection(DIRECTION_SOUTH);
+            *x += oldConnectorData.basePipe; //If the new module has a pipe on the north side
+            CompassConnector newConnectorData = newConnectedModule->getConnectorFromCompensatedDirection(DIRECTION_NORTH);
+            *x += newConnectorData.basePipe; //If the new module has a pipe on the north side
+        }
+        break;
+        case DIRECTION_WEST: //If the new module should be placed on the west side of the old module
+        {
+            Serial.println("Placing on west side of old piece");
+            *y -= 1;
+            CompassConnector oldConnectorData = oldConnectedModule->getConnectorFromCompensatedDirection(DIRECTION_WEST);
+            *y -= oldConnectorData.basePipe; //If the new module has a pipe on the east side
+            CompassConnector newConnectorData = newConnectedModule->getConnectorFromCompensatedDirection(DIRECTION_EAST);
+            *y -= newConnectorData.basePipe; //If the new module has a pipe on the east side
+        }
+        break;
+    }
+}
 void ModuleManager::placePuzzlePiece(ConnectedModule *newConnectedModule, uint8_t firstFreeX, uint8_t firstFreeY)
 {
     Serial.print("Placing puzzle piece ");
     Serial.println(newConnectedModule->getModuleID());
 
     //Place the new heart piece on the board
-                puzzlePieces[firstFreeX][firstFreeY].parentModule = newConnectedModule;
-                puzzlePieces[firstFreeX][firstFreeY].pieceType = PUZZLEPIECE_TYPE_HEART;
-                editPuzzleGridPart(firstFreeX, firstFreeY, newConnectedModule, PUZZLEPIECE_TYPE_HEART);
+    editPuzzleGridPart(firstFreeX, firstFreeY, newConnectedModule, PUZZLEPIECE_TYPE_HEART);
 
-                //Place pipes from heart piece on the board
-                for (uint8_t i = 1; i <= DIRECTIONS; i++)
-                {
-                    
-                    CompassConnector newPieceConnectorData = newConnectedModule->getConnectorInfo_RotationAdjusted(i);
-                    Serial.print("Checking direction ");
-                    Serial.print(i);
-                    Serial.print(" - has pipe with length ");
-                    Serial.println(newPieceConnectorData.basePipe);
+    //Place pipes from heart piece on the board
+    for (uint8_t i = 1; i <= DIRECTIONS; i++)
+    {
+        CompassConnector newPieceConnectorData = newConnectedModule->getConnectorFromCompensatedDirection(i);
 
-                        for (uint8_t j = 1; j <= newPieceConnectorData.basePipe; j++)
-                        {
-                            Serial.print("Placing pipe on the board ");
-                            Serial.println(j);
-                            
-                            switch (i)
-                            {
-                                case DIRECTION_NORTH:
-                                editPuzzleGridPart(firstFreeX - j, firstFreeY, newConnectedModule, PUZZLEPIECE_TYPE_PIPE_FORWARDBACKWARD);
-                                break;
+        Serial.print("Checking direction ");
+        Serial.print(directionToString(i));
+        Serial.print(" - has pipe with length ");
+        Serial.println(newPieceConnectorData.basePipe);
 
-                                case DIRECTION_EAST:
-                                editPuzzleGridPart(firstFreeX, firstFreeY + j, newConnectedModule, PUZZLEPIECE_TYPE_PIPE_LEFTRIGHT);
-                                break;
-
-                                case DIRECTION_SOUTH:
-                                editPuzzleGridPart(firstFreeX + j, firstFreeY, newConnectedModule, PUZZLEPIECE_TYPE_PIPE_FORWARDBACKWARD);
-                                break;
-
-                                case DIRECTION_WEST:
-                                editPuzzleGridPart(firstFreeX, firstFreeY - j, newConnectedModule, PUZZLEPIECE_TYPE_PIPE_LEFTRIGHT);
-                                break;
-                            }
-                        }
-                        
-            
-                }
-                newConnectedModule->setPuzzlePlaced(true);
-                Serial.println("Puzzle piece placed");
+        for (uint8_t j = 1; j <= newPieceConnectorData.basePipe; j++)
+        {
+            Serial.print("Placing pipe on the board ");
+            Serial.println(j);
+            switch (i)
+            {
+                case DIRECTION_NORTH:
+                editPuzzleGridPart(firstFreeX - j, firstFreeY, newConnectedModule, PUZZLEPIECE_TYPE_PIPE_FORWARDBACKWARD);
+                break;
+                case DIRECTION_EAST:
+                editPuzzleGridPart(firstFreeX, firstFreeY + j, newConnectedModule, PUZZLEPIECE_TYPE_PIPE_LEFTRIGHT);
+                break;
+                case DIRECTION_SOUTH:
+                editPuzzleGridPart(firstFreeX + j, firstFreeY, newConnectedModule, PUZZLEPIECE_TYPE_PIPE_FORWARDBACKWARD);
+                break;
+                case DIRECTION_WEST:
+                editPuzzleGridPart(firstFreeX, firstFreeY - j, newConnectedModule, PUZZLEPIECE_TYPE_PIPE_LEFTRIGHT);
+                break;
+            }
+        }
+    }
+    newConnectedModule->setPuzzlePlaced(true);
+    Serial.println("Puzzle piece placed");
 }
-
 void ModuleManager::editPuzzleGridPart(uint8_t x, uint8_t y, ConnectedModule *parentModule, uint8_t pieceType)
 {
     Serial.print("Editing puzzle grid part [");
@@ -562,6 +572,7 @@ void ModuleManager::tick()
     {
         lastMillis_PuzzleDraw = millis();
         printPuzzleGrid();
+        
     }
 
     if (boardIsEmpty)
