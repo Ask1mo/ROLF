@@ -170,23 +170,28 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
         
         {
             //Find a module that has a neighbor that is the module that is being placed
-            uint8_t originalPieceConnectorDirection = connectedModules[i]->checkHasNeighbor(newConnectedModule->getModuleID());
+            uint8_t originalPieceConnectorDirection = connectedModules[i]->checkHasNeighbor_RotationAdjusted(newConnectedModule->getModuleID());
             if(originalPieceConnectorDirection != DIRECTION_NONE)
             {
                 //Find the side of the old module on which the new module should be placed
                 CompassConnector originalPieceConnectorData = connectedModules[i]->getConnectorInfo(originalPieceConnectorDirection); //Conains a rotation adjusted direction to which the new module should be placed
                
                 //Check if new and old modules have discovered each other on one of their sides. (If this isn't the case, the modules dont know where to connect to each other)
-                if(newConnectedModule->checkHasNeighbor(connectedModules[i]->getModuleID()) == DIRECTION_NONE)
+                if(newConnectedModule->checkHasNeighbor_RotationAdjusted(connectedModules[i]->getModuleID()) == DIRECTION_NONE)
                 {
                     Serial.println("Error: New module does not have the old module as a neighbor");
                     return;
                 }
-                if (connectedModules[i]->checkHasNeighbor(newConnectedModule->getModuleID()) == DIRECTION_NONE)
+                if (connectedModules[i]->checkHasNeighbor_RotationAdjusted(newConnectedModule->getModuleID()) == DIRECTION_NONE)
                 {
                     Serial.println("Error: Old module does not have the new module as a neighbor");
                     return;
                 }
+
+                Serial.print("Old module found new module on side ");
+                Serial.println(connectedModules[i]->checkHasNeighbor_RotationAdjusted(newConnectedModule->getModuleID())); //ASK READ THIS YOURE NOT GETTING A ROTATION COMPENSATED DIRECTION!!!
+                Serial.print("New module found old module on side ");
+                Serial.println(newConnectedModule->checkHasNeighbor_RotationAdjusted(connectedModules[i]->getModuleID()));
 
                 //Find the location of the old module on the board
                 Serial.println("Calculating X and Y of the old piece");
@@ -236,6 +241,10 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                 }
 
                 Serial.println("Rotating Module");
+                Serial.print("Rotation compensated direction on OLD module to place NEW module on: ");
+                Serial.println(originalPieceConnectorData.rotationCompensatedDirection);
+                Serial.print("Rotation compensated direction on NEW module to place OLD module on: ");
+                Serial.println(newConnectedModule->checkHasNeighbor_RotationAdjusted(connectedModules[i]->getModuleID()));
                 //Rotate the new module to the correct orientation so it can connect to the existing piece
                 switch (originalPieceConnectorData.rotationCompensatedDirection)
                 {
@@ -244,7 +253,7 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                     Serial.println("The new module should be placed on the North side of the old module");
 
                     //Check the rotation needed on the new module
-                    switch (newConnectedModule->checkHasNeighbor(connectedModules[i]->getModuleID()))//Returns the direction to which the old module is relative to the new module.
+                    switch (newConnectedModule->checkHasNeighbor_RotationAdjusted(connectedModules[i]->getModuleID()))//Returns the direction to which the old module is relative to the new module.
                     {
                         case DIRECTION_NORTH:
                         //The new module is placed on the north side of the old module.
@@ -286,7 +295,7 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                         Serial.println("The new module should be placed on the East side of the old module");
 
                         //Check the rotation needed on the new module
-                        switch (newConnectedModule->checkHasNeighbor(connectedModules[i]->getModuleID()))
+                        switch (newConnectedModule->checkHasNeighbor_RotationAdjusted(connectedModules[i]->getModuleID()))
                         {
                             case DIRECTION_NORTH:
                             //The new module is placed on the east side of the old module.
@@ -329,7 +338,7 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                         Serial.println("The new module should be placed on the South side of the old module");
 
                         //Check the rotation needed on the new module
-                        switch (newConnectedModule->checkHasNeighbor(connectedModules[i]->getModuleID()))
+                        switch (newConnectedModule->checkHasNeighbor_RotationAdjusted(connectedModules[i]->getModuleID()))
                         {
                             case DIRECTION_NORTH:
                             //The new module is placed on the south side of the old module.
@@ -372,7 +381,7 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
                         Serial.println("The new module should be placed od the West side of the old module");
 
                         //Check the rotation needed on the new module
-                        switch (newConnectedModule->checkHasNeighbor(connectedModules[i]->getModuleID()))
+                        switch (newConnectedModule->checkHasNeighbor_RotationAdjusted(connectedModules[i]->getModuleID()))
                         {
                             case DIRECTION_NORTH:
                             //The new module is placed on the west side of the old module.

@@ -71,11 +71,23 @@ BaseInfo ConnectedModule::getBaseInfo()
 
 uint8_t ConnectedModule::checkHasNeighbor(uint8_t neighborID)
 {
-    for (uint8_t i = 0; i < DIRECTIONS; i++)
+    for (uint8_t i = 1; i < DIRECTION_WEST; i++)
     {
         if (compassConnectors[i].neighborAdress == neighborID)
         {
             return i; //Return the direction of the neighbor.
+        }
+    }
+    return false;
+}
+
+uint8_t ConnectedModule::checkHasNeighbor_RotationAdjusted(uint8_t neighborID)
+{
+    for (uint8_t i = 1; i < DIRECTION_WEST; i++)
+    {
+        if (compassConnectors[i].neighborAdress == neighborID)
+        {
+            return compassConnectors[i].rotationCompensatedDirection; //Return the direction of the neighbor.
         }
     }
     return false;

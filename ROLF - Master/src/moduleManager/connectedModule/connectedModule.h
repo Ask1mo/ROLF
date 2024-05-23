@@ -65,6 +65,7 @@ class ConnectedModule
     void setPuzzlePlaced(bool puzzlePlaced);
     BaseInfo getBaseInfo();
     uint8_t checkHasNeighbor(uint8_t neighborID); //Returns the direction of the neighbor if it is connected, otherwise 0.
+    uint8_t checkHasNeighbor_RotationAdjusted(uint8_t neighborID); //Returns the direction of the neighbor if it is connected, otherwise 0.
     CompassConnector getConnectorInfo(uint8_t direction);
     CompassConnector getConnectorInfo_RotationAdjusted(uint8_t rotationAdjustedDirection);
     void rotate(uint8_t rotation);
