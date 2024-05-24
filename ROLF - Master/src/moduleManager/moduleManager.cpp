@@ -631,55 +631,126 @@ void ModuleManager::editPuzzleGridPart(uint8_t x, uint8_t y, ConnectedModule *pa
     puzzlePieces[x][y].pieceType = pieceType;
     puzzlePieces[x][y].basePiece = basePiece;
 }
-void ModuleManager::DFS(int x, int y, const XYZ& start, const XYZ& end)
+std::vector<XYZ> ModuleManager::tracePath(XYZ start, XYZ end)
 {
-    // Check if the current node is the end node
-    if (x == end.x && y == end.y) {
-        // Record the step
-        path.push_back(XYZ{x, y, 0});
-        return;
+    Serial.println("Prepping path tracer");
+    //Set things up
+    for (uint8_t i = 0; i < TEMP_PUZZLEGRIDSIZE; i++)
+    {
+        for (uint8_t j = 0; j < TEMP_PUZZLEGRIDSIZE; j++)
+        {
+            puzzleVisitInfo[i][j].visited = false;
+        }
     }
 
-    // Mark current node as visited
-    puzzlePieces[x][y].visited = true;
-    Serial.print("("); Serial.print(x); Serial.print(", "); Serial.print(y); Serial.println(")");
+    std::vector<XYZ> path;
+    path.push_back(start);
+    puzzleVisitInfo[start.x][start.y].visited = true;
 
-    // Record the step
-    path.push_back(XYZ{x, y, 0});
+    XYZ currentPos = start;
 
-    // Define the four possible directions
-    uint8_t directions[] = {DIRECTION_NORTH, DIRECTION_EAST, DIRECTION_SOUTH, DIRECTION_WEST};
-
-    // Try each direction
-    for (int i = 0; i < 4; i++) {
-        XYZ next = {x, y, 0};
-        switch (directions[i]) {
-            case DIRECTION_NORTH: next.x--; break;
-            case DIRECTION_EAST: next.y++; break;
-            case DIRECTION_SOUTH: next.x++; break;
-            case DIRECTION_WEST: next.y--; break;
-        }
-
-        // Check if the new node is valid and not visited
-        if (isMovementAllowed(XYZ{x, y, 0}, directions[i]) && !puzzlePieces[next.x][next.y].visited && puzzlePieces[next.x][next.y].pieceType != PUZZLEPIECE_TYPE_EMPTY)
+    Serial.println("Tracing path");
+    //Loop
+    while (true)
+    {
+        //Get available direcitons
+        Serial.println("Getting available directions");
+        std::vector<uint8_t> directionsToGoTo;
+        for(uint8_t i = 0; i < DIRECTIONS; i++)
         {
-            DFS(next.x, next.y, start, end);
-            // If the end node has been found, return
-            if (!path.empty() && path.back().x == end.x && path.back().y == end.y) {
-                return;
+            switch (i)
+            {
+                case DIRECTION_NORTH:
+                if (isMovementAllowed(currentPos, DIRECTION_NORTH)) directionsToGoTo.push_back(DIRECTION_NORTH);
+                break;
+                case DIRECTION_EAST:
+                if (isMovementAllowed(currentPos, DIRECTION_EAST)) directionsToGoTo.push_back(DIRECTION_EAST);
+                break;
+                case DIRECTION_SOUTH:
+                if (isMovementAllowed(currentPos, DIRECTION_SOUTH)) directionsToGoTo.push_back(DIRECTION_SOUTH);
+                break;
+                case DIRECTION_WEST:
+                if (isMovementAllowed(currentPos, DIRECTION_WEST)) directionsToGoTo.push_back(DIRECTION_WEST);
+                break;
             }
         }
-    }
 
-    // If all directions have been tried and none of them lead to the end node, remove the current node from the path
-    if (!path.empty()) {
-        path.pop_back();
+        //Check if there are any directions to go to
+        Serial.print("Checking if there are any directions to go to: ");
+        if (directionsToGoTo.size() == 0)
+        {
+            Serial.println("No directions to go to");
+            //If there are no directions to go to, go back to the previous position
+            path.pop_back();
+            if (path.size() == 0)
+            {
+                Serial.println("Path tracing FAILED!");
+                //If the path is empty, return an empty path. This means that the pathfinding has failed.
+                std::vector<XYZ> emptyPath;
+                return emptyPath;
+            }
+            currentPos = path.back();
+            continue;
+        }
+
+        Serial.print("There are directions to go to: ");
+        for (uint8_t i = 0; i < directionsToGoTo.size(); i++)
+        {
+            Serial.print(directionToString(directionsToGoTo[i]));
+            Serial.print(",");
+        }
+        Serial.println();
+
+        //Choose a random direction to go to
+        Serial.print("Choosing a random direction to go to: ");
+        uint8_t directionToGoTo = directionsToGoTo[random(0, directionsToGoTo.size()-1)];
+        Serial.println(directionToString(directionToGoTo));
+
+        //Move to the new position
+        switch (directionToGoTo)
+        {
+            case DIRECTION_NORTH:
+            currentPos.x -= 1;
+            break;
+            case DIRECTION_EAST:
+            currentPos.y += 1;
+            break;
+            case DIRECTION_SOUTH:
+            currentPos.x += 1;
+            break;
+            case DIRECTION_WEST:
+            currentPos.y -= 1;
+            break;
+        }
+
+        //Add the new position to the path
+        path.push_back(currentPos);
+
+        //Mark the new position as visited
+        puzzleVisitInfo[currentPos.x][currentPos.y].visited = true; 
+
+        //Check if the end position has been reached
+        if (currentPos.x == end.x && currentPos.y == end.y)
+        {
+            Serial.println("Path tracing SUCCESS!");
+            return path;
+        }        
     }
 }
 bool ModuleManager::isMovementAllowed(XYZ current, uint8_t direction)
 {
+    Serial.print("Checking if movement is allowed from [");
+    Serial.print(current.x);
+    Serial.print("][");
+    Serial.print(current.y);
+    Serial.print("] to the ");
+    Serial.println(directionToString(direction));
+    Serial.print("Base piece: ");
+    Serial.println(puzzlePieces[current.x][current.y].basePiece, BIN);
+
     //First, check if the current position is in bounds
     if (current.x < 0 || current.x >= TEMP_PUZZLEGRIDSIZE || current.y < 0 || current.y >= TEMP_PUZZLEGRIDSIZE) return false;
+    Serial.println("Passed the current position out of bounds check");
 
     //Second, check if the direction to go to is in bounds
     switch (direction)
@@ -697,42 +768,63 @@ bool ModuleManager::isMovementAllowed(XYZ current, uint8_t direction)
         if (current.y - 1 < 0) return false;
         break;
     }
+    Serial.println("Passed the goal position out of bounds check");
 
     //Third, see if you can move from the current position in the given direction
     switch (direction)
     {
         case DIRECTION_NORTH:
         //If the 7th bit (The first bit from the left) is true, movement is allowed. Do bitwise AND with 0b10000000. (Clear out all other bits and check if the 7th bit is true	)
-        if ((puzzlePieces[current.x][current.y].basePiece & 0b10000000) == 0b10000000) return false;
+        if ((puzzlePieces[current.x][current.y].basePiece & 0b10000000) != 0b10000000) return false;
         break;
         case DIRECTION_EAST:
-        if ((puzzlePieces[current.x][current.y].basePiece & 0b01000000) == 0b01000000) return false;
+        if ((puzzlePieces[current.x][current.y].basePiece & 0b01000000) != 0b01000000) return false;
         break;
         case DIRECTION_SOUTH:
-        if ((puzzlePieces[current.x][current.y].basePiece & 0b00100000) == 0b00100000) return false;
+        if ((puzzlePieces[current.x][current.y].basePiece & 0b00100000) != 0b00100000) return false;
         break;
         case DIRECTION_WEST:
-        if ((puzzlePieces[current.x][current.y].basePiece & 0b00010000) == 0b00010000) return false;
+        if ((puzzlePieces[current.x][current.y].basePiece & 0b00010000) != 0b00010000) return false;
         break;
     }
+    Serial.println("Passed depart allowed from current test");
 
 
     //Fourth, see if you can move into the next position in the given direction
     switch (direction)
     {
         case DIRECTION_NORTH:
-        if ((puzzlePieces[current.x - 1][current.y].basePiece & 0b00100000) == 0b00100000) return false;
+        if ((puzzlePieces[current.x - 1][current.y].basePiece & 0b00100000) != 0b00100000) return false;
         break;
         case DIRECTION_EAST:
-        if ((puzzlePieces[current.x][current.y + 1].basePiece & 0b00010000) == 0b00010000) return false;
+        if ((puzzlePieces[current.x][current.y + 1].basePiece & 0b00010000) != 0b00010000) return false;
         break;
         case DIRECTION_SOUTH:
-        if ((puzzlePieces[current.x + 1][current.y].basePiece & 0b10000000) == 0b10000000) return false;
+        if ((puzzlePieces[current.x + 1][current.y].basePiece & 0b10000000) != 0b10000000) return false;
         break;
         case DIRECTION_WEST:
-        if ((puzzlePieces[current.x][current.y - 1].basePiece & 0b01000000) == 0b01000000) return false;
+        if ((puzzlePieces[current.x][current.y - 1].basePiece & 0b01000000) != 0b01000000) return false;
         break;
     }
+    Serial.println("Passed arrival allowed to next test");
+
+    //Fifth, see if the direction to move to was already visited
+    switch (direction)
+    {
+        case DIRECTION_NORTH:
+        if (puzzleVisitInfo[current.x - 1][current.y].visited) return false;
+        break;
+        case DIRECTION_EAST:
+        if (puzzleVisitInfo[current.x][current.y + 1].visited) return false;
+        break;
+        case DIRECTION_SOUTH:
+        if (puzzleVisitInfo[current.x + 1][current.y].visited) return false;
+        break;
+        case DIRECTION_WEST:
+        if (puzzleVisitInfo[current.x][current.y - 1].visited) return false;
+        break;
+    }
+    Serial.println("Passed visited test");
 
     return true;
 }
@@ -758,19 +850,7 @@ void ModuleManager::tick()
 
         //Reset pathfinding
         lastMillis_PathFindDemo = millis();
-        path.clear();
 
-        Serial.println("Reset list");
-
-        for (uint8_t i = 0; i < TEMP_PUZZLEGRIDSIZE; i++)
-        {
-            for (uint8_t j = 0; j < TEMP_PUZZLEGRIDSIZE; j++)
-            {
-                puzzlePieces[i][j].visited = false;
-            }
-        }
-
-        Serial.println("Reset visisted");
 
         //Get start and end coordinates by getting random heart pieces (Have to be puzzle placed)
         uint16_t attempts = 0;
@@ -814,7 +894,7 @@ void ModuleManager::tick()
         getOldModuleCoords(pathfindModuleB->getModuleID(), &x, &y);
         XYZ end = XYZ{x, y, 0};
         
-        DFS(start.x, start.y, start, end);
+        std::vector<XYZ> path = tracePath(start, end);
         Serial.println("Path:");
         for (uint8_t i = 0; i < path.size(); i++)
         {

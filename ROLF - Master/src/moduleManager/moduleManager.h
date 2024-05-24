@@ -28,6 +28,10 @@ struct PuzzlePiece
     ConnectedModule *parentModule;
     uint8_t pieceType;
     uint8_t basePiece; //THe direction-based code of each piece type (Check pipePieces.h for more info)
+    
+};
+struct PuzzleVisitInfo
+{
     bool visited;
 };
 
@@ -36,8 +40,8 @@ class ModuleManager
 {
     private:
     std::vector<ConnectedModule*> connectedModules;
-    std::vector<XYZ> path;
-    PuzzlePiece puzzlePieces[TEMP_PUZZLEGRIDSIZE][TEMP_PUZZLEGRIDSIZE];
+    PuzzlePiece     puzzlePieces[TEMP_PUZZLEGRIDSIZE][TEMP_PUZZLEGRIDSIZE];
+    PuzzleVisitInfo puzzleVisitInfo[TEMP_PUZZLEGRIDSIZE][TEMP_PUZZLEGRIDSIZE];
     uint64_t lastMillis_PuzzleDraw;
     uint64_t lastMillis_PathFindDemo;
     bool boardIsEmpty;
@@ -63,7 +67,7 @@ class ModuleManager
     void placePuzzlePiece(ConnectedModule *newConnectedModule, uint8_t firstFreeX, uint8_t firstFreeY);
     void editPuzzleGridPart(uint8_t x, uint8_t y, ConnectedModule *parentModule, uint8_t pieceType, uint8_t basePiece);
 
-    void DFS(int x, int y, const XYZ& start, const XYZ& end);
+    std::vector<XYZ> tracePath(XYZ start, XYZ end);
     bool isMovementAllowed(XYZ current, uint8_t direction);
 
 
@@ -76,4 +80,4 @@ class ModuleManager
 
 
 
-#endif
+#endif 
