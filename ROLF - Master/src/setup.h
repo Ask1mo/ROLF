@@ -16,7 +16,8 @@
 
 
 
-#define INTERVAL_MODULECHANGESCAN 10000
+
+
 #define BAUDRATE_MONITOR 115200
 #define SSID "GLOWII"
 #define PASSWORD "AskimoGlow"

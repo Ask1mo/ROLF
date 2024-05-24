@@ -10,17 +10,25 @@
 #define TEMP_PUZZLEGRIDSIZE 20
 
 
+#define INTERVAL_MODULECHANGESCAN 10000
+#define INTERVAL_PATHFINDDEMO 16000
 #define INTERVAL_DRAWPUZZLE 5000
 
-#define ORIENTATION_HORIZONTAL 0
-#define ORIENTATION_VERTICAL   1
-#define DIRECTION_FORWARD      0
-#define DIRECTION_BACKWARD     1
+
+
+struct XYZ
+{
+    int x;
+    int y;
+    int z;
+};
 
 struct PuzzlePiece
 {
     ConnectedModule *parentModule;
     uint8_t pieceType;
+    uint8_t basePiece; //THe direction-based code of each piece type (Check pipePieces.h for more info)
+    bool visited;
 };
 
 
@@ -28,9 +36,14 @@ class ModuleManager
 {
     private:
     std::vector<ConnectedModule*> connectedModules;
+    std::vector<XYZ> path;
     PuzzlePiece puzzlePieces[TEMP_PUZZLEGRIDSIZE][TEMP_PUZZLEGRIDSIZE];
     uint64_t lastMillis_PuzzleDraw;
+    uint64_t lastMillis_PathFindDemo;
     bool boardIsEmpty;
+    
+
+
     
 
 
@@ -48,9 +61,10 @@ class ModuleManager
     void getOldModuleCoords(uint8_t oldModuleID, uint8_t *x, uint8_t *y);
     void calculateNewModuleCoords(ConnectedModule *newConnectedModule, ConnectedModule *oldConnectedModule, uint8_t *x, uint8_t *y);
     void placePuzzlePiece(ConnectedModule *newConnectedModule, uint8_t firstFreeX, uint8_t firstFreeY);
-    void editPuzzleGridPart(uint8_t x, uint8_t y, ConnectedModule *parentModule, uint8_t pieceType);
+    void editPuzzleGridPart(uint8_t x, uint8_t y, ConnectedModule *parentModule, uint8_t pieceType, uint8_t basePiece);
 
-    
+    void DFS(int x, int y, const XYZ& start, const XYZ& end);
+    bool isMovementAllowed(XYZ current, uint8_t direction);
 
 
     public:

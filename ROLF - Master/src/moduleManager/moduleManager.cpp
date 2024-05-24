@@ -87,7 +87,7 @@ ConnectedModule *ModuleManager::getModule(uint8_t moduleID)
     }
     return NULL;
 }
-
+/*
 void ModuleManager::printPuzzleGrid()
 {
     Serial.println();
@@ -130,7 +130,7 @@ void ModuleManager::printPuzzleGrid()
                 Serial.print("||");
                 break;
 
-                case PUZZLEPIECE_TYPE_PIPE_LEFTRIGHT:
+                case PUZZLEPIECE_TYPE_PIPE_:
                 Serial.print("==");
                 break;
 
@@ -161,7 +161,74 @@ void ModuleManager::printPuzzleGrid()
             connectedModules[i]->printConnectors();
         }
 }
+*/
+void ModuleManager::printPuzzleGrid()
+{
+    Serial.println();
+    Serial.println("Printing grid:");
 
+    Serial.print("Columns");    
+        for(uint8_t j = 0; j < TEMP_PUZZLEGRIDSIZE; j++)
+        {
+            Serial.print(" ");
+            if(j<10) Serial.print(" ");
+            Serial.print(j);
+        }
+        Serial.println();
+
+
+    for (uint8_t i = 0; i < TEMP_PUZZLEGRIDSIZE; i++)
+    {
+        Serial.print("Row ");
+        Serial.print(i);
+        if(i<10) Serial.print(" ");
+        Serial.print(" [");
+
+        uint8_t stupidID = 0;
+
+        for (uint8_t j = 0; j < TEMP_PUZZLEGRIDSIZE; j++)
+        {
+            switch (puzzlePieces[i][j].pieceType)
+            {
+                case PUZZLEPIECE_TYPE_EMPTY:
+                Serial.print("..");
+                break;
+
+                case PUZZLEPIECE_TYPE_HEART:
+                stupidID = puzzlePieces[i][j].parentModule->getModuleID();
+                if(stupidID < 10) Serial.print(" ");
+                Serial.print(stupidID);
+                break;
+
+                case PUZZLEPIECE_TYPE_PIPE:
+                switch (puzzlePieces[i][j].basePiece)
+                {
+                    case BASE_PIPE_FORWARDBACKWARD:
+                    Serial.print("||");
+                    break;
+                    case BASE_PIPE_LEFTRIGHT:
+                    Serial.print("==");
+                    break;
+                    case BASE_PIPE_UPDOWN:
+                    Serial.print("()");
+                    break;
+                }
+                break;
+
+                default:
+                Serial.print("??");
+                break;
+            }
+            Serial.print(" ");
+        }
+        Serial.println(" ]");        
+    }
+
+    for (uint8_t i = 0; i < connectedModules.size(); i++)
+    {
+        connectedModules[i]->printConnectors();
+    }
+}
 
 void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
 {
@@ -508,7 +575,7 @@ void ModuleManager::placePuzzlePiece(ConnectedModule *newConnectedModule, uint8_
     Serial.println(newConnectedModule->getModuleID());
 
     //Place the new heart piece on the board
-    editPuzzleGridPart(firstFreeX, firstFreeY, newConnectedModule, PUZZLEPIECE_TYPE_HEART);
+    editPuzzleGridPart(firstFreeX, firstFreeY, newConnectedModule, PUZZLEPIECE_TYPE_HEART, newConnectedModule->getBaseInfo().heartPiece);
 
     //Place pipes from heart piece on the board
     for (uint8_t i = 1; i <= DIRECTIONS; i++)
@@ -527,16 +594,16 @@ void ModuleManager::placePuzzlePiece(ConnectedModule *newConnectedModule, uint8_
             switch (i)
             {
                 case DIRECTION_NORTH:
-                editPuzzleGridPart(firstFreeX - j, firstFreeY, newConnectedModule, PUZZLEPIECE_TYPE_PIPE_FORWARDBACKWARD);
+                editPuzzleGridPart(firstFreeX - j, firstFreeY, newConnectedModule, PUZZLEPIECE_TYPE_PIPE, BASE_PIPE_FORWARDBACKWARD);
                 break;
                 case DIRECTION_EAST:
-                editPuzzleGridPart(firstFreeX, firstFreeY + j, newConnectedModule, PUZZLEPIECE_TYPE_PIPE_LEFTRIGHT);
+                editPuzzleGridPart(firstFreeX, firstFreeY + j, newConnectedModule, PUZZLEPIECE_TYPE_PIPE, BASE_PIPE_LEFTRIGHT);
                 break;
                 case DIRECTION_SOUTH:
-                editPuzzleGridPart(firstFreeX + j, firstFreeY, newConnectedModule, PUZZLEPIECE_TYPE_PIPE_FORWARDBACKWARD);
+                editPuzzleGridPart(firstFreeX + j, firstFreeY, newConnectedModule, PUZZLEPIECE_TYPE_PIPE, BASE_PIPE_FORWARDBACKWARD);
                 break;
                 case DIRECTION_WEST:
-                editPuzzleGridPart(firstFreeX, firstFreeY - j, newConnectedModule, PUZZLEPIECE_TYPE_PIPE_LEFTRIGHT);
+                editPuzzleGridPart(firstFreeX, firstFreeY - j, newConnectedModule, PUZZLEPIECE_TYPE_PIPE, BASE_PIPE_LEFTRIGHT);
                 break;
             }
         }
@@ -544,7 +611,8 @@ void ModuleManager::placePuzzlePiece(ConnectedModule *newConnectedModule, uint8_
     newConnectedModule->setPuzzlePlaced(true);
     Serial.println("Puzzle piece placed");
 }
-void ModuleManager::editPuzzleGridPart(uint8_t x, uint8_t y, ConnectedModule *parentModule, uint8_t pieceType)
+
+void ModuleManager::editPuzzleGridPart(uint8_t x, uint8_t y, ConnectedModule *parentModule, uint8_t pieceType, uint8_t basePiece)
 {
     Serial.print("Editing puzzle grid part [");
     Serial.print(x);
@@ -561,6 +629,112 @@ void ModuleManager::editPuzzleGridPart(uint8_t x, uint8_t y, ConnectedModule *pa
 
     puzzlePieces[x][y].parentModule = parentModule;
     puzzlePieces[x][y].pieceType = pieceType;
+    puzzlePieces[x][y].basePiece = basePiece;
+}
+void ModuleManager::DFS(int x, int y, const XYZ& start, const XYZ& end)
+{
+    // Check if the current node is the end node
+    if (x == end.x && y == end.y) {
+        // Record the step
+        path.push_back(XYZ{x, y, 0});
+        return;
+    }
+
+    // Mark current node as visited
+    puzzlePieces[x][y].visited = true;
+    Serial.print("("); Serial.print(x); Serial.print(", "); Serial.print(y); Serial.println(")");
+
+    // Record the step
+    path.push_back(XYZ{x, y, 0});
+
+    // Define the four possible directions
+    uint8_t directions[] = {DIRECTION_NORTH, DIRECTION_EAST, DIRECTION_SOUTH, DIRECTION_WEST};
+
+    // Try each direction
+    for (int i = 0; i < 4; i++) {
+        XYZ next = {x, y, 0};
+        switch (directions[i]) {
+            case DIRECTION_NORTH: next.x--; break;
+            case DIRECTION_EAST: next.y++; break;
+            case DIRECTION_SOUTH: next.x++; break;
+            case DIRECTION_WEST: next.y--; break;
+        }
+
+        // Check if the new node is valid and not visited
+        if (isMovementAllowed(XYZ{x, y, 0}, directions[i]) && !puzzlePieces[next.x][next.y].visited && puzzlePieces[next.x][next.y].pieceType != PUZZLEPIECE_TYPE_EMPTY)
+        {
+            DFS(next.x, next.y, start, end);
+            // If the end node has been found, return
+            if (!path.empty() && path.back().x == end.x && path.back().y == end.y) {
+                return;
+            }
+        }
+    }
+
+    // If all directions have been tried and none of them lead to the end node, remove the current node from the path
+    if (!path.empty()) {
+        path.pop_back();
+    }
+}
+bool ModuleManager::isMovementAllowed(XYZ current, uint8_t direction)
+{
+    //First, check if the current position is in bounds
+    if (current.x < 0 || current.x >= TEMP_PUZZLEGRIDSIZE || current.y < 0 || current.y >= TEMP_PUZZLEGRIDSIZE) return false;
+
+    //Second, check if the direction to go to is in bounds
+    switch (direction)
+    {
+        case DIRECTION_NORTH:
+        if (current.x - 1 < 0) return false;
+        break;
+        case DIRECTION_EAST:
+        if (current.y + 1 >= TEMP_PUZZLEGRIDSIZE) return false;
+        break;
+        case DIRECTION_SOUTH:
+        if (current.x + 1 >= TEMP_PUZZLEGRIDSIZE) return false;
+        break;
+        case DIRECTION_WEST:
+        if (current.y - 1 < 0) return false;
+        break;
+    }
+
+    //Third, see if you can move from the current position in the given direction
+    switch (direction)
+    {
+        case DIRECTION_NORTH:
+        //If the 7th bit (The first bit from the left) is true, movement is allowed. Do bitwise AND with 0b10000000. (Clear out all other bits and check if the 7th bit is true	)
+        if ((puzzlePieces[current.x][current.y].basePiece & 0b10000000) == 0b10000000) return false;
+        break;
+        case DIRECTION_EAST:
+        if ((puzzlePieces[current.x][current.y].basePiece & 0b01000000) == 0b01000000) return false;
+        break;
+        case DIRECTION_SOUTH:
+        if ((puzzlePieces[current.x][current.y].basePiece & 0b00100000) == 0b00100000) return false;
+        break;
+        case DIRECTION_WEST:
+        if ((puzzlePieces[current.x][current.y].basePiece & 0b00010000) == 0b00010000) return false;
+        break;
+    }
+
+
+    //Fourth, see if you can move into the next position in the given direction
+    switch (direction)
+    {
+        case DIRECTION_NORTH:
+        if ((puzzlePieces[current.x - 1][current.y].basePiece & 0b00100000) == 0b00100000) return false;
+        break;
+        case DIRECTION_EAST:
+        if ((puzzlePieces[current.x][current.y + 1].basePiece & 0b00010000) == 0b00010000) return false;
+        break;
+        case DIRECTION_SOUTH:
+        if ((puzzlePieces[current.x + 1][current.y].basePiece & 0b10000000) == 0b10000000) return false;
+        break;
+        case DIRECTION_WEST:
+        if ((puzzlePieces[current.x][current.y - 1].basePiece & 0b01000000) == 0b01000000) return false;
+        break;
+    }
+
+    return true;
 }
 
 
@@ -573,6 +747,83 @@ void ModuleManager::tick()
         lastMillis_PuzzleDraw = millis();
         printPuzzleGrid();
         
+    }
+
+    //Pathfinding demo
+    if (millis() - lastMillis_PathFindDemo > INTERVAL_PATHFINDDEMO)
+    {
+        if (connectedModules.size() < 2) return;
+
+        Serial.println("Minimum 2 modules found: Pathfinding");
+
+        //Reset pathfinding
+        lastMillis_PathFindDemo = millis();
+        path.clear();
+
+        Serial.println("Reset list");
+
+        for (uint8_t i = 0; i < TEMP_PUZZLEGRIDSIZE; i++)
+        {
+            for (uint8_t j = 0; j < TEMP_PUZZLEGRIDSIZE; j++)
+            {
+                puzzlePieces[i][j].visited = false;
+            }
+        }
+
+        Serial.println("Reset visisted");
+
+        //Get start and end coordinates by getting random heart pieces (Have to be puzzle placed)
+        uint16_t attempts = 0;
+
+        ConnectedModule *pathfindModuleA;
+        while (true)
+        {
+            attempts++;
+            if (attempts > 1000) return;
+            pathfindModuleA = connectedModules[random(0, connectedModules.size()-1)];
+            if (pathfindModuleA->getPuzzlePlaced()) break;
+        }
+
+        Serial.print("Module A found: ");
+        Serial.println(pathfindModuleA->getModuleID());
+
+        ConnectedModule *pathfindModuleB;
+        while (true)
+        {
+            attempts++;
+            if (attempts > 1000) return;
+            pathfindModuleB = connectedModules[random(0, connectedModules.size()-1)];
+            if(!pathfindModuleB->getPuzzlePlaced() || pathfindModuleB->getModuleID() != pathfindModuleA->getModuleID()) break;
+        }
+
+        Serial.print("Module B found: ");
+        Serial.println(pathfindModuleB->getModuleID());
+
+        Serial.print("Pathfinding from ");
+        Serial.print(pathfindModuleA->getModuleID());
+        Serial.print(" to ");
+        Serial.println(pathfindModuleB->getModuleID());
+        
+
+
+        uint8_t x = 0;
+        uint8_t y = 0;
+        getOldModuleCoords(pathfindModuleA->getModuleID(), &x, &y);
+        XYZ start = XYZ{x, y, 0};
+        
+        getOldModuleCoords(pathfindModuleB->getModuleID(), &x, &y);
+        XYZ end = XYZ{x, y, 0};
+        
+        DFS(start.x, start.y, start, end);
+        Serial.println("Path:");
+        for (uint8_t i = 0; i < path.size(); i++)
+        {
+            Serial.print("(");
+            Serial.print(path[i].x);
+            Serial.print(", ");
+            Serial.print(path[i].y);
+            Serial.println(")");
+        }
     }
 
     if (boardIsEmpty)

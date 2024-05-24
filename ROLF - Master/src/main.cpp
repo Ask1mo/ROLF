@@ -6,6 +6,8 @@
 
 #define WIFICONNECTATTEMPTS 10
 
+
+
 #define MESSAGE_CLCO_NEWCLIENT          "NewCl" //NewCl(macAdress)(heartPiece)(n)(e)(s)(w)(u)(d)
 #define MESSAGE_COCL_IDASSIGNMENT       "IDAss" //IDAss(moduleAdress)(sessionID)
 #define MESSAGE_CLCO_CONNECTIONCHANGED  "ConCh" //ConCh(updateCode)

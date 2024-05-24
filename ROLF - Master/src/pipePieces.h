@@ -15,20 +15,30 @@
 //Bit 4: West
 //Bit 3: Up
 //Bit 2: Down
-//Bit 0b1: N/A
+//Bit 1: Heart (0) or pipe (1)
 //Bit 0: N/A
-
-#define BASE_PIPE_UNKNOWN               0
-#define BASE_PIPE_FEMALE                255
 
 #define PUZZLEPIECE_TYPE_EMPTY                  0
 #define PUZZLEPIECE_TYPE_HEART                  1
-#define PUZZLEPIECE_TYPE_PIPE_FORWARDBACKWARD   2
-#define PUZZLEPIECE_TYPE_PIPE_LEFTRIGHT         3
-#define PUZZLEPIECE_TYPE_PIPE_UPDOWN            4
+#define PUZZLEPIECE_TYPE_PIPE                   2
 
 
-#define BASE_HEART_UNKNOWN 0
+#define BASE_UNKNOWN 0b00000000
+
+#define BASE_PIPE_LEFTRIGHT 0b01010010
+/*
+        ==
+*/
+#define BASE_PIPE_FORWARDBACKWARD 0b10100010
+/*
+        ||
+*/
+#define BASE_PIPE_UPDOWN 0b00001110
+/*
+        ()
+*/
+
+
 
 #define BASE_HEART_X 0b11110000
 /*
