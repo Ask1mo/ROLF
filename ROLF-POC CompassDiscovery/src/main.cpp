@@ -7,6 +7,19 @@
 #include "trinity/Trinity.h"
 #include "setup.h"
 
+#if CONFIG_FREERTOS_UNICORE
+#define ARDUINO_RUNNING_CORE 0
+#else
+#define ARDUINO_RUNNING_CORE 1
+#endif
+
+// define two tasks for Blink & AnalogRead
+TaskHandle_t Task1;
+TaskHandle_t Task2;
+void task_main( void *pvParameters );
+void task_leds( void *pvParameters );
+
+
 
 
 WiFiUDP udp;
@@ -164,43 +177,82 @@ void    udp_tick()
   udp_receive();
 }
 
+void task_main( void *pvParameters )
+{
+  //Setup
+  udp_connect();
+  connectorManager = new ConnectorManager(&moduleAdress);
+
+  //Loop
+  while (1)
+  {
+    currentMillis = millis();
+    /*
+    if (currentMillis - lastMillis_SessionCheck > INTERVAL_SESSIONCHECK)
+    {
+      lastMillis_SessionCheck = currentMillis;
+      udp_transmit(MESSAGE_DUPL_SESSIONCHECK+String(sessionID));
+    }
+    */
+
+    String updateCode = connectorManager->getUpdateCode();
+    if (updateCode != "") udp_transmit(MESSAGE_CLCO_CONNECTIONCHANGED+updateCode);
+
+    connectorManager->tick();
+    udp_tick();
+
+    vTaskDelay(1);
+  }
+}
+void task_leds( void *pvParameters )
+{
+  //Setup
+  trinity = new Trinity(60);
+  trinity->addPanel(new Panel(0, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Dead panel
+  trinity->addPanel(new Panel(1, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Horn A panel
+  trinity->addPanel(new Panel(2, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Pipe panel
+  trinity->addPanel(new Panel(3, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Horn B panel
+  trinity->begin();
+
+  //Loop
+  while (1)
+  {
+    //trinity->tick();
+    vTaskDelay(1);
+  }
+}
+
 void setup()
 {
   Serial.begin(BAUDRATE_MONITOR);
   Serial.println(F("---===Setup started===---"));
 
-  trinity = new Trinity(60);
+  xTaskCreatePinnedToCore
+  (
+    task_main,       /* Task function. */
+    "task_main",         /* name of task. */
+    10000,           /* Stack size of task */
+    NULL,            /* parameter of the task */
+    1,               /* priority of the task */
+    &Task1,          /* Task handle to keep track of created task */
+    0                /* pin task to core 0 */
+  );              
 
-  trinity->addPanel(new Panel(0, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Dead panel
-  trinity->addPanel(new Panel(1, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Horn A panel
-  trinity->addPanel(new Panel(2, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Pipe panel
-  trinity->addPanel(new Panel(3, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Horn B panel
+  xTaskCreatePinnedToCore
+  (
+    task_leds,       /* Task function. */
+    "task_leds",         /* name of task. */
+    10000,           /* Stack size of task */
+    NULL,            /* parameter of the task */
+    1,               /* priority of the task */
+    &Task2,          /* Task handle to keep track of created task */
+    1               /* pin task to core 1 */
+  ); 
 
-  trinity->begin();
 
-  udp_connect();
-
-  connectorManager = new ConnectorManager(&moduleAdress);
-
-  Serial.println(F("---===Setup finished===---"));  
+  Serial.println(F("---===Setup finished===---"));
 }
 void loop()
 {
-  currentMillis = millis();
-
-  //trinity->tick();
-
-  /*
-  if (currentMillis - lastMillis_SessionCheck > INTERVAL_SESSIONCHECK)
-  {
-    lastMillis_SessionCheck = currentMillis;
-    udp_transmit(MESSAGE_DUPL_SESSIONCHECK+String(sessionID));
-  }
-  */
-
-  String updateCode = connectorManager->getUpdateCode();
-  if (updateCode != "") udp_transmit(MESSAGE_CLCO_CONNECTIONCHANGED+updateCode);
-
-  connectorManager->tick();
-  udp_tick();
+  
 }
