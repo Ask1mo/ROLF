@@ -26,9 +26,10 @@ uint8_t sessionID = 0;
 uint64_t currentMillis = 0;
 uint64_t lastMillis_SessionCheck = 0;
 
+#define SERVER_UDPPORT 4210
+
 #define PULSELENGTH_ID 5
 #define INTERVAL_SESSIONCHECK 60000         // 1 minute
-
 
 #define SYSTEMSTATE_CONNECTING_WIFI       0
 #define SYSTEMSTATE_CONNECTING_CONTROLLER 1
