@@ -7,12 +7,6 @@
 #include "trinity/Trinity.h"
 #include "setup.h"
 
-#if CONFIG_FREERTOS_UNICORE
-#define ARDUINO_RUNNING_CORE 0
-#else
-#define ARDUINO_RUNNING_CORE 1
-#endif
-
 // define two tasks for Blink & AnalogRead
 TaskHandle_t Task1;
 TaskHandle_t Task2;
@@ -180,12 +174,15 @@ void    udp_tick()
 void task_main( void *pvParameters )
 {
   //Setup
+  Serial.println("Task Main started");
   udp_connect();
   connectorManager = new ConnectorManager(&moduleAdress);
+  Serial.println("Task Main setup complete");
 
   //Loop
   while (1)
   {
+    //Serial.print("M");
     currentMillis = millis();
     /*
     if (currentMillis - lastMillis_SessionCheck > INTERVAL_SESSIONCHECK)
@@ -207,17 +204,20 @@ void task_main( void *pvParameters )
 void task_leds( void *pvParameters )
 {
   //Setup
+   Serial.println("Task Leds started");
   trinity = new Trinity(60);
   trinity->addPanel(new Panel(0, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Dead panel
   trinity->addPanel(new Panel(1, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Horn A panel
   trinity->addPanel(new Panel(2, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Pipe panel
   trinity->addPanel(new Panel(3, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Horn B panel
   trinity->begin();
+  Serial.println("Task Leds setup complete");
 
   //Loop
   while (1)
   {
-    //trinity->tick();
+    //Serial.print("L");
+    trinity->tick();
     vTaskDelay(1);
   }
 }

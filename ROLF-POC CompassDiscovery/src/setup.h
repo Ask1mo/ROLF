@@ -11,13 +11,13 @@
 #define DEBUG_OPERATIONS            3
 #define DEBUG_DAYISRUINED           5
 /*---=== Setting examples ===---*/
-#define DEBUGLEVEL DEBUG_OPERATIONS
+#define DEBUGLEVEL DEBUG_DISABLED
 //Debug settings
 
 //Wifi & UDP
 #define SSID "GLOWII"
 #define PASSWORD "AskimoGlow"
-#define SERVER_IP "192.168.137.79"
+#define SERVER_IP "192.168.137.246"
 #define SERVER_UDPPORT 4210  // local port to listen on
 //Wifi & UDP
 
