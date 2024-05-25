@@ -4,12 +4,14 @@
 #include <WiFiUdp.h>
 #include "Askbutton/AskButton.h"
 #include "connectorManager/ConnectorManager.h"
+#include "trinity/Trinity.h"
 #include "setup.h"
 
 
 
 WiFiUDP udp;
 ConnectorManager *connectorManager;
+Trinity *trinity;
 
 uint8_t moduleAdress = 0;
 uint8_t sessionID = 0;
@@ -167,6 +169,15 @@ void setup()
   Serial.begin(BAUDRATE_MONITOR);
   Serial.println(F("---===Setup started===---"));
 
+  trinity = new Trinity(60);
+
+  trinity->addPanel(new Panel(0, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Dead panel
+  trinity->addPanel(new Panel(1, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Horn A panel
+  trinity->addPanel(new Panel(2, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Pipe panel
+  trinity->addPanel(new Panel(3, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Horn B panel
+
+  trinity->begin();
+
   udp_connect();
 
   connectorManager = new ConnectorManager(&moduleAdress);
@@ -176,6 +187,8 @@ void setup()
 void loop()
 {
   currentMillis = millis();
+
+  //trinity->tick();
 
   /*
   if (currentMillis - lastMillis_SessionCheck > INTERVAL_SESSIONCHECK)
