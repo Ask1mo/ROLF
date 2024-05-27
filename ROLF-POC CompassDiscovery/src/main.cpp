@@ -37,7 +37,8 @@ uint64_t lastMillis_SessionCheck = 0;
 
 #define TIMEOUTATTEMPTS 10
 
-#define MESSAGE_CLCO_NEWCLIENT          "NewCl" //NewCl(macAdress)(heartPiece)(n)(e)(s)(w)(u)(d)
+#define MESSAGE_CLCO_NEWCLIENTTEMPLATE  "NwClT" //NwClT(macAdress)(TemplateID)
+#define MESSAGE_CLCO_NEWCLIENTFULL      "NwClF" //NwClF(macAdress)(heartPiece)(nl,nd)(el,ed)(sl,sd)(wl,wd)(ul,ud)(dl,dd)
 #define MESSAGE_COCL_IDASSIGNMENT       "IDAss" //IDAss(moduleAdress)(sessionID)
 #define MESSAGE_CLCO_CONNECTIONCHANGED  "ConCh" //ConCh(updateCode)
 #define MESSAGE_COCL_UPDATEREQUEST      "UpReq" //UpReq
@@ -46,22 +47,6 @@ uint64_t lastMillis_SessionCheck = 0;
 
 
 
-struct BaseInfo
-{
-  uint8_t heartPiece;
-  uint8_t northPipe;
-  uint8_t eastPipe;
-  uint8_t southPipe;
-  uint8_t westPipe;
-  uint8_t upPipe;
-  uint8_t downPipe;
-};
-String baseInfoToString(BaseInfo baseInfo)
-{
-  return String(baseInfo.heartPiece) + String(baseInfo.northPipe) + String(baseInfo.eastPipe) + String(baseInfo.southPipe) + String(baseInfo.westPipe) + String(baseInfo.upPipe) + String(baseInfo.downPipe);
-}
-
-BaseInfo systemInfo = {BASE_HEARTPIECE, BASE_NORTHPIPE, BASE_EASTPIPE, BASE_SOUTHPIPE, BASE_WESTPIPE, BASE_UPPIPE, BASE_DOWNPIPE};
 
 
 void reboot(String message)
@@ -152,7 +137,7 @@ void    udp_connect()
 
 
   udp.begin(SERVER_UDPPORT);
-  String identMessage = MESSAGE_CLCO_NEWCLIENT + WiFi.macAddress() + baseInfoToString(systemInfo);
+  String identMessage = MESSAGE_CLCO_NEWCLIENTTEMPLATE + WiFi.macAddress() + SELECTEDPRESET;
   udp_transmit(identMessage);
 
   uint16_t timeout = 10000;

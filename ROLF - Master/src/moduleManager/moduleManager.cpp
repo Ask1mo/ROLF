@@ -904,6 +904,85 @@ void ModuleManager::tick()
             Serial.print(path[i].y);
             Serial.println(")");
         }
+
+
+
+
+        //If a path has been found
+        if (path.size() > 0)
+        {
+            //Get the module ID's of the path
+            std::vector<uint8_t> pathModuleIDs;
+            std::vector<ModuleLedInfo_Output> pipeInstructions;
+            for (uint8_t i = 0; i < path.size(); i++)
+            {
+                uint8_t colour =  (uint8_t)random(1, 7);
+
+                //Check if the ID hasnt been added yet
+                for (uint8_t j = 0; j < pathModuleIDs.size(); j++)
+                {
+                    if (pathModuleIDs[j] == puzzlePieces[path[i].x][path[i].y].parentModule->getModuleID())
+                    {
+                        pathModuleIDs.push_back(puzzlePieces[path[i].x][path[i].y].parentModule->getModuleID());
+                    } 
+                }
+                
+                //Check if current module is a heart piece
+                if (puzzlePieces[path[i].x][path[i].y].pieceType == PUZZLEPIECE_TYPE_HEART)
+                {
+                    //Get module
+                    ConnectedModule *currentModule = puzzlePieces[path[i].x][path[i].y].parentModule;
+
+                    //Get directions of previous and next pipe
+                    uint8_t previousPipeDirection = 0;
+                    uint8_t nextPipeDirection = 0;
+                    if (i > 0) //(To prevent out of bounds)
+                    {
+                        if (path[i-1].x == path[i].x - 1) previousPipeDirection = DIRECTION_NORTH;
+                        if (path[i-1].y == path[i].y + 1) previousPipeDirection = DIRECTION_EAST;
+                        if (path[i-1].x == path[i].x + 1) previousPipeDirection = DIRECTION_SOUTH;
+                        if (path[i-1].y == path[i].y - 1) previousPipeDirection = DIRECTION_WEST;
+                        //previousPipeDirection = puzzlePieces[path[i].x][path[i].y].parentModule->getConnectorFromCompensatedDirection(previousPipeDirection).compassDirection; //Convert compensated direciton to normal compass direction
+                    }
+                    if (i < path.size() - 1) //(To prevent out of bounds)
+                    {
+                        if (path[i+1].x == path[i].x - 1) nextPipeDirection = DIRECTION_NORTH;
+                        if (path[i+1].y == path[i].y + 1) nextPipeDirection = DIRECTION_EAST;
+                        if (path[i+1].x == path[i].x + 1) nextPipeDirection = DIRECTION_SOUTH;
+                        if (path[i+1].y == path[i].y - 1) nextPipeDirection = DIRECTION_WEST;
+                        //nextPipeDirection = puzzlePieces[path[i].x][path[i].y].parentModule->getConnectorFromCompensatedDirection(nextPipeDirection).compassDirection; //Convert compensated direciton to normal compass direction
+                    }
+                    
+                    uint16_t newDelay;
+                    if  (path.size() > 1) newDelay = pipeInstructions[path.size()].delayOffset + pipeInstructions[path.size()].delayMine;                    
+                    else newDelay = 0;
+                    
+
+                    uint16_t ownDelay = currentModule->getPipeDelayFromCompensatedDirection(previousPipeDirection);
+                    ownDelay = currentModule->getPipeDelayFromCompensatedDirection(nextPipeDirection);
+                    
+                    
+                    ModuleLedInfo_Output pipeInstruction = ModuleLedInfo_Output{currentModule->getModuleID(),previousPipeDirection, nextPipeDirection, ownDelay, colour};
+
+
+                }
+            }
+                //Get the input pipe direction of this module
+
+
+
+                //Get the output pipe direction of this module
+                
+            //Get the durationValue of the pipes connected to the module.
+            
+            //Calculate the delays for every module.
+
+            //Get a colour for the path
+
+            //Send to module: Input direction, output direction, delay, colour. (Colour is the same for all modules)
+
+            
+        }
     }
 
     if (boardIsEmpty)
@@ -914,8 +993,8 @@ void ModuleManager::tick()
             boardIsEmpty = false;
         }
     }
-
-
+    
+    //Attempt to fit puzzle pieces
     for (uint8_t i = 0; i < connectedModules.size(); i++)
     {
         if(!connectedModules[i]->getPuzzlePlaced()) tryFitPuzzlePiece(connectedModules[i]);
@@ -932,21 +1011,41 @@ uint8_t ModuleManager::addNewModule(String macAdress, String ipAdress, BaseInfo 
     Serial.print(macAdress);
     Serial.print(" IP: ");
     Serial.println(ipAdress);
-    Serial.println("BaseInfo:");
-    Serial.print("HeartPiece: ");
+
+    Serial.print("Template ID: ");
+    Serial.print(baseInfo.id);
+    Serial.print(" HeartPiece: ");
     Serial.println(baseInfo.heartPiece);
-    Serial.print("NorthPipe: ");
-    Serial.println(baseInfo.northPipe);
-    Serial.print("EastPipe: ");
-    Serial.println(baseInfo.eastPipe);
-    Serial.print("SouthPipe: ");
-    Serial.println(baseInfo.southPipe);
-    Serial.print("WestPipe: ");
-    Serial.println(baseInfo.westPipe);
-    Serial.print("UpPipe: ");
-    Serial.println(baseInfo.upPipe);
-    Serial.print("DownPipe: ");
-    Serial.println(baseInfo.downPipe);
+
+    Serial.print(" NorthPipe length: ");
+    Serial.print(baseInfo.northPipeLength);
+    Serial.print(", delay: ");
+    Serial.println(baseInfo.northPipeDelay);
+
+    Serial.print(" EastPipe: ");
+    Serial.print(baseInfo.eastPipeLength);
+    Serial.print(", delay: ");
+    Serial.println(baseInfo.eastPipeDelay);
+
+    Serial.print(" SouthPipe: ");
+    Serial.print(baseInfo.southPipeLength);
+    Serial.print(", delay: ");
+    Serial.println(baseInfo.southPipeDelay);
+
+    Serial.print(" WestPipe: ");
+    Serial.print(baseInfo.westPipeLength);
+    Serial.print(", delay: ");
+    Serial.println(baseInfo.westPipeDelay);
+
+    Serial.print(" UpPipe: ");
+    Serial.print(baseInfo.upPipeLength);
+    Serial.print(", delay: ");
+    Serial.println(baseInfo.upPipeDelay);
+
+    Serial.print(" DownPipe: ");
+    Serial.print(baseInfo.downPipeLength);
+    Serial.print(", delay: ");
+    Serial.println(baseInfo.downPipeDelay);
 
 
     uint8_t moduleID = getModuleID_macAdress(macAdress);// stays 0 if no module is found

@@ -12,7 +12,8 @@
 #define DEBUGLEVEL DEBUG_OPERATIONS
 
 
-
+#define PRESET_1_DEBUGCROSS 1
+#define PRESET_2_AllCross1 2
 
 
 

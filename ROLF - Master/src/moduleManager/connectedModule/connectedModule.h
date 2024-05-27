@@ -26,6 +26,7 @@ struct CompassConnector
 {
   uint8_t compassDirection; //NEWSUD
   uint8_t basePipe; //The type of pipe that is connected to the base of the module. (Pipe length, female, end cap.)
+  uint16_t pipeDelay; //The delay of the pipe
 
   uint8_t rotationCompensatedDirection;
 
@@ -35,13 +36,26 @@ struct CompassConnector
 
 struct BaseInfo
 {
+  uint8_t id;
   uint8_t heartPiece;
-  uint8_t northPipe;
-  uint8_t eastPipe;
-  uint8_t southPipe;
-  uint8_t westPipe;
-  uint8_t upPipe;
-  uint8_t downPipe;
+  
+  uint8_t northPipeLength;
+  uint16_t northPipeDelay;
+  
+  uint8_t eastPipeLength;
+  uint16_t eastPipeDelay;
+  
+  uint8_t southPipeLength;
+  uint16_t southPipeDelay;
+  
+  uint8_t westPipeLength;
+  uint16_t westPipeDelay;
+  
+  uint8_t upPipeLength;
+  uint16_t upPipeDelay;
+  
+  uint8_t downPipeLength;
+  uint16_t downPipeDelay;
 };
 
 class ConnectedModule
@@ -70,6 +84,7 @@ class ConnectedModule
     //CompassConnector getConnectorInfo(uint8_t direction);
     CompassConnector getConnectorFromCompensatedDirection(uint8_t compensatedDirection);
     CompassConnector getConnectorFromID(uint8_t neighborID);
+    uint16_t getPipeDelayFromCompensatedDirection(uint8_t compensatedDirection);
     void rotate(uint8_t rotation);
     void printConnectors();
 

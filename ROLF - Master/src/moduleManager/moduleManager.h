@@ -16,6 +16,16 @@
 
 
 
+struct ModuleLedInfo_Output
+{
+    uint8_t moduleID;
+    uint8_t inputDirection;
+    uint8_t outputDirection;
+    uint16_t delayOffset;
+    uint16_t delayMine;
+    uint8_t color;
+};
+
 struct XYZ
 {
     int x;

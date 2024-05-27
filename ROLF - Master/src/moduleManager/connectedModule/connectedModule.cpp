@@ -32,12 +32,12 @@ ConnectedModule::ConnectedModule(String macAdress, String ipAdress, uint8_t modu
     this->baseInfo = baseInfo;
     puzzlePlaced = false;
     //Todo: make this prettier.
-    compassConnectors[0] = {DIRECTION_NORTH, baseInfo.northPipe,    DIRECTION_NORTH,0, 0};
-    compassConnectors[1] = {DIRECTION_EAST,  baseInfo.eastPipe,     DIRECTION_EAST, 0, 0};
-    compassConnectors[2] = {DIRECTION_SOUTH, baseInfo.southPipe,    DIRECTION_SOUTH,0, 0};
-    compassConnectors[3] = {DIRECTION_WEST,  baseInfo.westPipe,     DIRECTION_WEST, 0, 0};
-    compassConnectors[4] = {DIRECTION_UP,    baseInfo.upPipe,       DIRECTION_UP,   0, 0};
-    compassConnectors[5] = {DIRECTION_DOWN,  baseInfo.downPipe,     DIRECTION_DOWN, 0, 0};
+    compassConnectors[0] = {DIRECTION_NORTH, baseInfo.northPipeLength,    DIRECTION_NORTH,0, 0};
+    compassConnectors[1] = {DIRECTION_EAST,  baseInfo.eastPipeLength,     DIRECTION_EAST, 0, 0};
+    compassConnectors[2] = {DIRECTION_SOUTH, baseInfo.southPipeLength,    DIRECTION_SOUTH,0, 0};
+    compassConnectors[3] = {DIRECTION_WEST,  baseInfo.westPipeLength,     DIRECTION_WEST, 0, 0};
+    compassConnectors[4] = {DIRECTION_UP,    baseInfo.upPipeLength,       DIRECTION_UP,   0, 0};
+    compassConnectors[5] = {DIRECTION_DOWN,  baseInfo.downPipeLength,     DIRECTION_DOWN, 0, 0};
 
 }
 void ConnectedModule::setIpAdress(String ipAdress)
@@ -182,4 +182,17 @@ void ConnectedModule::printConnectors()
         Serial.print(" - Neighbor's Direction: ");
         Serial.println(directionToString(compassConnectors[i].neighborDirection));
     }
+}
+
+uint16_t ConnectedModule::getPipeDelayFromCompensatedDirection(uint8_t compensatedDirection)
+{
+    for (uint8_t i = 0; i < DIRECTIONS; i++)
+    {
+        if (compassConnectors[i].rotationCompensatedDirection == compensatedDirection)
+        {
+            return compassConnectors[i].pipeDelay;
+        }
+    }
+    Serial.println("ERROR: ConnectedModule::getPipeDelayFromCompensatedDirection: No pipe found with that direction");
+    return 0;
 }

@@ -8,7 +8,8 @@
 
 
 
-#define MESSAGE_CLCO_NEWCLIENT          "NewCl" //NewCl(macAdress)(heartPiece)(n)(e)(s)(w)(u)(d)
+#define MESSAGE_CLCO_NEWCLIENTTEMPLATE  "NwClT" //NwClT(macAdress)(TemplateID)
+#define MESSAGE_CLCO_NEWCLIENTFULL      "NwClF" //NwClF(macAdress)(heartPiece)(nl,nd)(el,ed)(sl,sd)(wl,wd)(ul,ud)(dl,dd)
 #define MESSAGE_COCL_IDASSIGNMENT       "IDAss" //IDAss(moduleAdress)(sessionID)
 #define MESSAGE_CLCO_CONNECTIONCHANGED  "ConCh" //ConCh(updateCode)
 #define MESSAGE_COCL_UPDATEREQUEST      "UpReq" //UpReq
@@ -22,6 +23,25 @@ uint8_t currentSession = 0;
 uint64_t lastSystemScanMillis = 0;
 
 
+
+
+
+
+#define XFACTOR 100
+BaseInfo getBaseInfo(uint8_t presetID) //Different presets are defined here. This should a temporary solution.
+{
+  switch (presetID)
+  {
+    case PRESET_1_DEBUGCROSS:
+      return BaseInfo{PRESET_1_DEBUGCROSS,BASE_HEART_X,         2,2*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    0,0,            0,0};
+    break;
+    case PRESET_2_AllCross1:
+      return BaseInfo{PRESET_2_AllCross1,BASE_HEART_XUPDOWN,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR};
+    break;
+  }
+  Serial.println("Preset not found");
+  return BaseInfo{0,0,0,0,0,0,0,0,0,0,0,0,0};
+}
 
 void udp_transmit(String message, String clientIP)
 {
@@ -50,17 +70,16 @@ void udp_receive()
     Serial.println(message);
     
 
-    if (message.startsWith(MESSAGE_CLCO_NEWCLIENT))//Message contains 8 pieces of data: macAdress, heartPiece, n, e, s, w, u, d
+    if (message.startsWith(MESSAGE_CLCO_NEWCLIENTFULL))//Message contains 8 pieces of data: macAdress, heartPiece, n, e, s, w, u, d
+    {
+      Serial.println("New client full message received. Not implemented");
+    }
+    if (message.startsWith(MESSAGE_CLCO_NEWCLIENTTEMPLATE))//Message contains 8 pieces of data: macAdress, heartPiece, n, e, s, w, u, d
     {
       String macAdress = message.substring(6, 22);
-      BaseInfo baseInfo = {0, 0, 0, 0, 0, 0, 0};
-      baseInfo.heartPiece = message.substring(22, 25).toInt();
-      baseInfo.northPipe = message.substring(25, 26).toInt();
-      baseInfo.eastPipe = message.substring(26, 27).toInt();
-      baseInfo.southPipe = message.substring(27, 28).toInt();
-      baseInfo.westPipe = message.substring(28, 29).toInt();
-      baseInfo.upPipe = message.substring(29, 30).toInt();
-      baseInfo.downPipe = message.substring(30, 31).toInt();
+      uint8_t templateID      = (uint8_t)message[22];
+
+      BaseInfo baseInfo = getBaseInfo(templateID);
 
       uint8_t moduleID = moduleManager.addNewModule(macAdress, remoteIp, baseInfo);
       if (moduleID == 0) Serial.println("New module could not be added");
