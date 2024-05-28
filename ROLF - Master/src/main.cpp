@@ -174,6 +174,13 @@ void loop()
 
   udp_tick();
   moduleManager.tick();
+  String ledTransmission = MESSAGE_COCL_NEWEFFECT;
+  String ipAdress;
+  if (moduleManager.getLedTransmission(&ledTransmission, &ipAdress));
+  {
+
+    udp_transmit(ledTransmission, ipAdress);
+  }
   /*
   if (currentMillis - lastSystemScanMillis > INTERVAL_MODULECHANGESCAN)
   {

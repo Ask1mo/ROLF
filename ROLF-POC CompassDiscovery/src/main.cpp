@@ -97,7 +97,21 @@ void    udp_receive()
 
     if (message.startsWith(MESSAGE_COCL_NEWEFFECT))
     {
-      Serial.println("New effect received, not implemented");
+      uint8_t inputDirection = (uint8_t)message[5];
+      uint8_t outputDirection = (uint8_t)message[6];
+      uint8_t color = (uint8_t)message[7];
+      uint16_t delayOffset = ((uint8_t)message[8] << 8) | (uint8_t)message[9];
+
+      Serial.print("New effect received. Input Direction: ");
+      Serial.print(inputDirection);
+      Serial.print(", Output Direction: ");
+      Serial.print(outputDirection);
+      Serial.print(", Color: ");
+      Serial.print(color);
+      Serial.print(", Delay Offset: ");
+      Serial.println(delayOffset);
+
+      //effectManager.updateEffect(inputDirection, outputDirection, color, delayOffset);
     }
 
     if (message.startsWith(MESSAGE_DUPL_SESSIONCHECK))

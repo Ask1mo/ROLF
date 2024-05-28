@@ -963,8 +963,7 @@ void ModuleManager::tick()
                     
                     
                     ModuleLedInfo_Output pipeInstruction = ModuleLedInfo_Output{currentModule->getModuleID(),previousPipeDirection, nextPipeDirection, ownDelay, colour};
-
-
+                    bufferedTransmissions.push_back(pipeInstruction);
                 }
             }
                 //Get the input pipe direction of this module
@@ -1098,4 +1097,24 @@ void ModuleManager::updateModuleConnection(uint8_t moduleID, uint8_t direction, 
         return;
     }
     module->updateConnection(direction, neighborID, neighborDirection);
+}
+bool ModuleManager::getLedTransmission(String *transmission, String *ipAdress)
+{
+    if (bufferedTransmissions.size() == 0)
+    {
+        return false;
+    }
+    
+    ModuleLedInfo_Output output = bufferedTransmissions[0];
+    bufferedTransmissions.erase(bufferedTransmissions.begin());
+
+    *transmission += (char)output.inputDirection;
+    *transmission += (char)output.outputDirection;
+    *transmission += (char)output.color;
+    *transmission += (char)((output.delayOffset >> 8) & 0xFF); // Store first 8 bits of delay
+    *transmission += (char)(output.delayOffset & 0xFF); // Store last 8 bits of delay
+    
+    
+    *ipAdress = getModule(output.moduleID)->getIpAdress();
+    return true;
 }
