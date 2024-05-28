@@ -1,0 +1,38 @@
+Date : 2024-05-28 16:30:52
+Directory : c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src
+Total : 9 files,  1355 codes, 397 comments, 285 blanks, all 2037 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| C++      |          9 |      1,355 |        397 |        285 |      2,037 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++-----------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                                              | files      | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                                                 |          9 |      1,355 |        397 |        285 |      2,037 |
+| . (Files)                                                                                                                         |          3 |        187 |        134 |         66 |        387 |
+| AskButton                                                                                                                         |          2 |        111 |          6 |         20 |        137 |
+| moduleManager                                                                                                                     |          4 |      1,057 |        257 |        199 |      1,513 |
+| moduleManager (Files)                                                                                                             |          2 |        819 |        244 |        157 |      1,220 |
+| moduleManager\connectedModule                                                                                                     |          2 |        238 |         13 |         42 |        293 |
++-----------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-----------------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                                                                          | language | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\AskButton\AskButton.cpp                           | C++      |         83 |          6 |         12 |        101 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\AskButton\AskButton.h                             | C++      |         28 |          0 |          8 |         36 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\main.cpp                                          | C++      |        145 |         14 |         34 |        193 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\moduleManager\connectedModule\connectedModule.cpp | C++      |        166 |         12 |         20 |        198 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\moduleManager\connectedModule\connectedModule.h   | C++      |         72 |          1 |         22 |         95 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\moduleManager\moduleManager.cpp                   | C++      |        751 |        244 |        129 |      1,124 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\moduleManager\moduleManager.h                     | C++      |         68 |          0 |         28 |         96 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\pipePieces.h                                      | C++      |         26 |        119 |         22 |        167 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\setup.h                                           | C++      |         16 |          1 |         10 |         27 |
+| Total                                                                                                                             |          |      1,355 |        397 |        285 |      2,037 |
++-----------------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+

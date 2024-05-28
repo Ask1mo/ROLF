@@ -3,9 +3,6 @@
 
 #include "setup.h"
 #include "LedManager/ledManager.h"
-#include "AskButton/AskButton.h"
-//#include "ControlPanel/Link/Link.h"
-//#include "ControlPanel/WifiManager/index.html"
 
 
 #define BRIGHTNESS_0_OFF 0
