@@ -14,6 +14,21 @@ void task_main( void *pvParameters );
 void task_leds( void *pvParameters );
 
 
+#define RESERVATION_NONE 0
+#define RESERVATION_MAIN 1
+#define RESERVATION_LEDS 2
+struct LedUpdate
+{
+  uint8_t inputPanel;
+  uint8_t outputPanel;
+  uint8_t colour;
+  uint16_t offset;
+};
+volatile uint8_t memoryReservedBy;
+std::vector<LedUpdate> ledUpdates;
+std::vector<LedUpdate> ledUpdates_buffer;
+
+
 
 
 WiFiUDP udp;
@@ -45,7 +60,43 @@ uint64_t lastMillis_SessionCheck = 0;
 #define MESSAGE_COCL_NEWEFFECT          "NewFX" //NewFX(effectCode)
 #define MESSAGE_DUPL_SESSIONCHECK       "SeChk" //SeChk(sessionID)
 
-
+struct BaseInfo
+{
+  uint8_t id;
+  uint8_t heartPiece;
+  
+  uint8_t northPipeLength;
+  uint16_t northPipeDelay;
+  
+  uint8_t eastPipeLength;
+  uint16_t eastPipeDelay;
+  
+  uint8_t southPipeLength;
+  uint16_t southPipeDelay;
+  
+  uint8_t westPipeLength;
+  uint16_t westPipeDelay;
+  
+  uint8_t upPipeLength;
+  uint16_t upPipeDelay;
+  
+  uint8_t downPipeLength;
+  uint16_t downPipeDelay;
+};
+BaseInfo getBaseInfo(uint8_t presetID)
+{
+  switch (presetID)
+  {
+    case PRESET_1_DEBUGCROSS:
+      return BaseInfo{PRESET_1_DEBUGCROSS,BASE_HEART_X,         2,2*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    0,0,            0,0};
+    break;
+    case PRESET_2_AllCross1:
+      return BaseInfo{PRESET_2_AllCross1,BASE_HEART_XUPDOWN,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR};
+    break;
+  }
+  Serial.println("Preset not found");
+  return BaseInfo{0,0,0,0,0,0,0,0,0,0,0,0,0};
+}
 
 
 
@@ -102,6 +153,10 @@ void    udp_receive()
       uint8_t color = (uint8_t)message[7];
       uint16_t delayOffset = ((uint8_t)message[8] << 8) | (uint8_t)message[9];
 
+      LedUpdate newLedUpdate = LedUpdate{inputDirection, outputDirection, color, delayOffset};
+
+      ledUpdates_buffer.push_back(newLedUpdate);
+
       Serial.print("New effect received. Input Direction: ");
       Serial.print(inputDirection);
       Serial.print(", Output Direction: ");
@@ -111,7 +166,8 @@ void    udp_receive()
       Serial.print(", Delay Offset: ");
       Serial.println(delayOffset);
 
-      //effectManager.updateEffect(inputDirection, outputDirection, color, delayOffset);
+      
+      
     }
 
     if (message.startsWith(MESSAGE_DUPL_SESSIONCHECK))
@@ -151,7 +207,7 @@ void    udp_connect()
 
 
   udp.begin(SERVER_UDPPORT);
-  String identMessage = MESSAGE_CLCO_NEWCLIENTTEMPLATE + WiFi.macAddress() + SELECTEDPRESET;
+  String identMessage = MESSAGE_CLCO_NEWCLIENTTEMPLATE + WiFi.macAddress() + (char)SELECTEDPRESET;
   udp_transmit(identMessage);
 
   uint16_t timeout = 10000;
@@ -192,6 +248,21 @@ void task_main( void *pvParameters )
     }
     */
 
+    if (memoryReservedBy == RESERVATION_NONE)
+    {
+      memoryReservedBy = RESERVATION_MAIN;
+
+      for (uint8_t i = 0; i < ledUpdates_buffer.size(); i++)
+      {
+        ledUpdates.push_back(ledUpdates_buffer[i]);
+        ledUpdates_buffer.erase(ledUpdates_buffer.begin() + i);
+      }
+
+      memoryReservedBy = RESERVATION_NONE;
+    }
+    
+    
+
     String updateCode = connectorManager->getUpdateCode();
     if (updateCode != "") udp_transmit(MESSAGE_CLCO_CONNECTIONCHANGED+updateCode);
 
@@ -204,13 +275,19 @@ void task_main( void *pvParameters )
 void task_leds( void *pvParameters )
 {
   //Setup
-   Serial.println("Task Leds started");
+  Serial.println("Task Leds started");
+
+  BaseInfo baseInfo = getBaseInfo(SELECTEDPRESET);
+
   trinity = new Trinity(60);
-  trinity->addPanel(new Panel(0, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Dead panel
-  trinity->addPanel(new Panel(1, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Horn A panel
-  trinity->addPanel(new Panel(2, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Pipe panel
-  trinity->addPanel(new Panel(3, 0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, 30));//Horn B panel
+  if (baseInfo.northPipeLength  > 0) trinity->addPanel(new Panel(DIRECTION_NORTH,0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, baseInfo.northPipeDelay));
+  if (baseInfo.eastPipeLength   > 0) trinity->addPanel(new Panel(DIRECTION_EAST, 0, 0, CLOCK_CLOCKWISE, COMPASS_EAST,  baseInfo.eastPipeDelay));
+  if (baseInfo.southPipeLength  > 0) trinity->addPanel(new Panel(DIRECTION_SOUTH,0, 0, CLOCK_CLOCKWISE, COMPASS_SOUTH, baseInfo.southPipeDelay));
+  if (baseInfo.westPipeLength   > 0) trinity->addPanel(new Panel(DIRECTION_WEST, 0, 0, CLOCK_CLOCKWISE, COMPASS_WEST,  baseInfo.westPipeDelay));
+  if (baseInfo.upPipeLength     > 0) trinity->addPanel(new Panel(DIRECTION_UP,   0, 0, CLOCK_CLOCKWISE, COMPASS_NORTH, baseInfo.upPipeDelay));
+  if (baseInfo.downPipeLength   > 0) trinity->addPanel(new Panel(DIRECTION_DOWN, 0, 0, CLOCK_CLOCKWISE, COMPASS_SOUTH, baseInfo.downPipeDelay));
   trinity->begin();
+
   Serial.println("Task Leds setup complete");
 
   //Loop
@@ -218,6 +295,40 @@ void task_leds( void *pvParameters )
   {
     //Serial.print("L");
     trinity->tick();
+
+    if(memoryReservedBy == RESERVATION_NONE)
+    {
+      memoryReservedBy = RESERVATION_LEDS;
+
+      for (uint8_t i = 0; i < ledUpdates.size(); i++)
+      {
+        uint8_t inputDirection = ledUpdates[i].inputPanel;
+        uint8_t outputDirection = ledUpdates[i].outputPanel;
+        uint8_t color = ledUpdates[i].colour;
+        uint16_t delayOffset = ledUpdates[i].offset;
+        ledUpdates.erase(ledUpdates.begin() + i);
+
+        uint16_t inputDelay = delayOffset + trinity->getPanelDiodeAmount(inputDirection);
+        for (uint16_t i = 0; i < trinity->getPanelDiodeAmount(inputDirection); i++)
+        {
+          trinity->setPanelDiodeVfx(inputDirection, i, VFXData{EFFECT_STOCK_FLASH, color, inputDelay, 1, false});
+          inputDelay--;
+        }
+
+        uint16_t outputDelay = delayOffset + trinity->getPanelDiodeAmount(inputDirection);
+        for (uint16_t i = 0; i < trinity->getPanelDiodeAmount(outputDirection); i++)
+        {
+          trinity->setPanelDiodeVfx(outputDirection, i, VFXData{EFFECT_STOCK_FLASH, color, outputDelay, 1, false});
+          outputDelay++;
+        }
+      }
+
+      memoryReservedBy = RESERVATION_NONE;
+    }
+
+    
+
+
     vTaskDelay(1);
   }
 }
@@ -256,3 +367,4 @@ void loop()
 {
   
 }
+  

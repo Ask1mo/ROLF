@@ -26,7 +26,6 @@ class ConnectorManager
     String getUpdateCode();
     void printConnectors();
     void addLedPipe(uint8_t direction, uint8_t basePipeType);
-    void begin();
 };
 
 

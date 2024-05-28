@@ -32,12 +32,12 @@ ConnectedModule::ConnectedModule(String macAdress, String ipAdress, uint8_t modu
     this->baseInfo = baseInfo;
     puzzlePlaced = false;
     //Todo: make this prettier.
-    compassConnectors[0] = {DIRECTION_NORTH, baseInfo.northPipeLength,    DIRECTION_NORTH,0, 0};
-    compassConnectors[1] = {DIRECTION_EAST,  baseInfo.eastPipeLength,     DIRECTION_EAST, 0, 0};
-    compassConnectors[2] = {DIRECTION_SOUTH, baseInfo.southPipeLength,    DIRECTION_SOUTH,0, 0};
-    compassConnectors[3] = {DIRECTION_WEST,  baseInfo.westPipeLength,     DIRECTION_WEST, 0, 0};
-    compassConnectors[4] = {DIRECTION_UP,    baseInfo.upPipeLength,       DIRECTION_UP,   0, 0};
-    compassConnectors[5] = {DIRECTION_DOWN,  baseInfo.downPipeLength,     DIRECTION_DOWN, 0, 0};
+    compassConnectors[0] = {DIRECTION_NORTH, baseInfo.northPipeLength, baseInfo.northPipeDelay,    DIRECTION_NORTH,0, 0};
+    compassConnectors[1] = {DIRECTION_EAST,  baseInfo.eastPipeLength,  baseInfo.eastPipeDelay,    DIRECTION_EAST, 0, 0};
+    compassConnectors[2] = {DIRECTION_SOUTH, baseInfo.southPipeLength, baseInfo.southPipeDelay,    DIRECTION_SOUTH,0, 0};
+    compassConnectors[3] = {DIRECTION_WEST,  baseInfo.westPipeLength,  baseInfo.westPipeDelay,    DIRECTION_WEST, 0, 0};
+    compassConnectors[4] = {DIRECTION_UP,    baseInfo.upPipeLength,    baseInfo.upPipeDelay,    DIRECTION_UP,   0, 0};
+    compassConnectors[5] = {DIRECTION_DOWN,  baseInfo.downPipeLength,  baseInfo.downPipeDelay,    DIRECTION_DOWN, 0, 0};
 
 }
 void ConnectedModule::setIpAdress(String ipAdress)

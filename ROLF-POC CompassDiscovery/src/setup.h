@@ -17,7 +17,7 @@
 //Wifi & UDP
 #define SSID "GLOWII"               //Wifi name
 #define PASSWORD "AskimoGlow"       //Password,                                                                                                 //TODO: needs changing
-#define SERVER_IP "192.168.137.246" //Should be Static IP of the master
+#define SERVER_IP "192.168.137.79" //Should be Static IP of the master
 //Wifi & UDP
 
 //UART
@@ -46,13 +46,12 @@
 //Pinout
 
 /*---=== Module/Pipe Presets ===---*/
-#define PRESET_1_DEBUGCROSS              
 //This file is used to define presets for different module designs.
 //The presetID is used to more efficiently transmit the preset to the master.Used to define the preset, and the other defines are used to define the parameters of the preset.
 //Heartpiece is to define the type of heartpiece used in the preset.
 //Pipe_Length is to define the amount of pipe pieces need to be shown on the puzzle grid in the master.
 //Pipe_Delay is to define the delay of the leds (How long does it take for the leds to through the pipe piece) 
-#define XFACTOR 100 //Standardised delay factor for standard length pipe pieces
+#define XFACTOR 5 //Standardised delay factor for standard length pipe pieces
 
 #define SELECTEDPRESET PRESET_1_DEBUGCROSS //This is where you select the type of pipe you're using
 #define PRESET_1_DEBUGCROSS 1
@@ -60,43 +59,7 @@
 
 /*---=== Module/Pipe Presets ===---*/
 
-struct BaseInfo
-{
-  uint8_t id;
-  uint8_t heartPiece;
-  
-  uint8_t northPipeLength;
-  uint16_t northPipeDelay;
-  
-  uint8_t eastPipeLength;
-  uint16_t eastPipeDelay;
-  
-  uint8_t southPipeLength;
-  uint16_t southPipeDelay;
-  
-  uint8_t westPipeLength;
-  uint16_t westPipeDelay;
-  
-  uint8_t upPipeLength;
-  uint16_t upPipeDelay;
-  
-  uint8_t downPipeLength;
-  uint16_t downPipeDelay;
-};
-BaseInfo getBaseInfo(uint8_t presetID)
-{
-  switch (presetID)
-  {
-    case PRESET_1_DEBUGCROSS:
-      return BaseInfo{PRESET_1_DEBUGCROSS,BASE_HEART_X,         2,2*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    0,0,            0,0};
-    break;
-    case PRESET_2_AllCross1:
-      return BaseInfo{PRESET_2_AllCross1,BASE_HEART_XUPDOWN,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR};
-    break;
-  }
-  Serial.println("Preset not found");
-  return BaseInfo{0,0,0,0,0,0,0,0,0,0,0,0,0};
-}
+
 
 
 

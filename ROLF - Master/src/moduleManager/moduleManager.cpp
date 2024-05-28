@@ -633,7 +633,7 @@ void ModuleManager::editPuzzleGridPart(uint8_t x, uint8_t y, ConnectedModule *pa
 }
 std::vector<XYZ> ModuleManager::tracePath(XYZ start, XYZ end)
 {
-    Serial.println("Prepping path tracer");
+    //Serial.println("Prepping path tracer");
     //Set things up
     for (uint8_t i = 0; i < TEMP_PUZZLEGRIDSIZE; i++)
     {
@@ -649,12 +649,12 @@ std::vector<XYZ> ModuleManager::tracePath(XYZ start, XYZ end)
 
     XYZ currentPos = start;
 
-    Serial.println("Tracing path");
+    //Serial.println("Tracing path");
     //Loop
     while (true)
     {
         //Get available direcitons
-        Serial.println("Getting available directions");
+        //Serial.println("Getting available directions");
         std::vector<uint8_t> directionsToGoTo;
         for(uint8_t i = 0; i < DIRECTIONS; i++)
         {
@@ -676,10 +676,10 @@ std::vector<XYZ> ModuleManager::tracePath(XYZ start, XYZ end)
         }
 
         //Check if there are any directions to go to
-        Serial.print("Checking if there are any directions to go to: ");
+        //Serial.print("Checking if there are any directions to go to: ");
         if (directionsToGoTo.size() == 0)
         {
-            Serial.println("No directions to go to");
+            //Serial.println("No directions to go to");
             //If there are no directions to go to, go back to the previous position
             path.pop_back();
             if (path.size() == 0)
@@ -693,7 +693,7 @@ std::vector<XYZ> ModuleManager::tracePath(XYZ start, XYZ end)
             continue;
         }
 
-        Serial.print("There are directions to go to: ");
+        //Serial.print("There are directions to go to: ");
         for (uint8_t i = 0; i < directionsToGoTo.size(); i++)
         {
             Serial.print(directionToString(directionsToGoTo[i]));
@@ -702,7 +702,7 @@ std::vector<XYZ> ModuleManager::tracePath(XYZ start, XYZ end)
         Serial.println();
 
         //Choose a random direction to go to
-        Serial.print("Choosing a random direction to go to: ");
+        //Serial.print("Choosing a random direction to go to: ");
         uint8_t directionToGoTo = directionsToGoTo[random(0, directionsToGoTo.size()-1)];
         Serial.println(directionToString(directionToGoTo));
 
@@ -739,6 +739,7 @@ std::vector<XYZ> ModuleManager::tracePath(XYZ start, XYZ end)
 }
 bool ModuleManager::isMovementAllowed(XYZ current, uint8_t direction)
 {
+    /*
     Serial.print("Checking if movement is allowed from [");
     Serial.print(current.x);
     Serial.print("][");
@@ -747,10 +748,11 @@ bool ModuleManager::isMovementAllowed(XYZ current, uint8_t direction)
     Serial.println(directionToString(direction));
     Serial.print("Base piece: ");
     Serial.println(puzzlePieces[current.x][current.y].basePiece, BIN);
+    */
 
     //First, check if the current position is in bounds
     if (current.x < 0 || current.x >= TEMP_PUZZLEGRIDSIZE || current.y < 0 || current.y >= TEMP_PUZZLEGRIDSIZE) return false;
-    Serial.println("Passed the current position out of bounds check");
+    //Serial.println("Passed the current position out of bounds check");
 
     //Second, check if the direction to go to is in bounds
     switch (direction)
@@ -768,7 +770,7 @@ bool ModuleManager::isMovementAllowed(XYZ current, uint8_t direction)
         if (current.y - 1 < 0) return false;
         break;
     }
-    Serial.println("Passed the goal position out of bounds check");
+    //Serial.println("Passed the goal position out of bounds check");
 
     //Third, see if you can move from the current position in the given direction
     switch (direction)
@@ -787,7 +789,7 @@ bool ModuleManager::isMovementAllowed(XYZ current, uint8_t direction)
         if ((puzzlePieces[current.x][current.y].basePiece & 0b00010000) != 0b00010000) return false;
         break;
     }
-    Serial.println("Passed depart allowed from current test");
+    //Serial.println("Passed depart allowed from current test");
 
 
     //Fourth, see if you can move into the next position in the given direction
@@ -806,7 +808,7 @@ bool ModuleManager::isMovementAllowed(XYZ current, uint8_t direction)
         if ((puzzlePieces[current.x][current.y - 1].basePiece & 0b01000000) != 0b01000000) return false;
         break;
     }
-    Serial.println("Passed arrival allowed to next test");
+    //Serial.println("Passed arrival allowed to next test");
 
     //Fifth, see if the direction to move to was already visited
     switch (direction)
@@ -824,7 +826,7 @@ bool ModuleManager::isMovementAllowed(XYZ current, uint8_t direction)
         if (puzzleVisitInfo[current.x][current.y - 1].visited) return false;
         break;
     }
-    Serial.println("Passed visited test");
+    //Serial.println("Passed visited test");
 
     return true;
 }
@@ -1104,6 +1106,8 @@ bool ModuleManager::getLedTransmission(String *transmission, String *ipAdress)
     {
         return false;
     }
+
+    Serial.println("Getting LED transmission");
     
     ModuleLedInfo_Output output = bufferedTransmissions[0];
     bufferedTransmissions.erase(bufferedTransmissions.begin());

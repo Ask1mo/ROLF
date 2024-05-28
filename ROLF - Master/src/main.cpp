@@ -27,9 +27,10 @@ uint64_t lastSystemScanMillis = 0;
 
 
 
-#define XFACTOR 100
+#define XFACTOR 5
 BaseInfo getBaseInfo(uint8_t presetID) //Different presets are defined here. This should a temporary solution.
 {
+
   switch (presetID)
   {
     case PRESET_1_DEBUGCROSS:
@@ -39,7 +40,8 @@ BaseInfo getBaseInfo(uint8_t presetID) //Different presets are defined here. Thi
       return BaseInfo{PRESET_2_AllCross1,BASE_HEART_XUPDOWN,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR};
     break;
   }
-  Serial.println("Preset not found");
+  Serial.print("Preset not found: ");
+  Serial.println(presetID);
   return BaseInfo{0,0,0,0,0,0,0,0,0,0,0,0,0};
 }
 
@@ -50,7 +52,7 @@ void udp_transmit(String message, String clientIP)
   udp.beginPacket(clientIP.c_str(), SERVER_UDPPORT);
   udp.write((uint8_t *)message.c_str(), message.length());
   udp.endPacket();
-}
+} 
 void udp_receive()
 {
   //Message Receiving
@@ -76,7 +78,7 @@ void udp_receive()
     }
     if (message.startsWith(MESSAGE_CLCO_NEWCLIENTTEMPLATE))//Message contains 8 pieces of data: macAdress, heartPiece, n, e, s, w, u, d
     {
-      String macAdress = message.substring(6, 22);
+      String macAdress = message.substring(5, 22);
       uint8_t templateID      = (uint8_t)message[22];
 
       BaseInfo baseInfo = getBaseInfo(templateID);
@@ -176,9 +178,9 @@ void loop()
   moduleManager.tick();
   String ledTransmission = MESSAGE_COCL_NEWEFFECT;
   String ipAdress;
-  if (moduleManager.getLedTransmission(&ledTransmission, &ipAdress));
+  if (moduleManager.getLedTransmission(&ledTransmission, &ipAdress))
   {
-
+    Serial.println("Sending LED transmission");
     udp_transmit(ledTransmission, ipAdress);
   }
   /*
@@ -188,4 +190,4 @@ void loop()
     Serial.println("Scanning module changes... (Not Implemented)");
   }
   */
-}
+} 
