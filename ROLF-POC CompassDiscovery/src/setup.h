@@ -15,9 +15,9 @@
 //Debug settings
 
 //Wifi & UDP
-#define SSID "GLOWII"               //Wifi name
+#define WIFI_SSID "GLOWII"               //Wifi name
 #define PASSWORD "AskimoGlow"       //Password,                                                                                                 //TODO: needs changing
-#define SERVER_IP "192.168.137.79" //Should be Static IP of the master
+#define SERVER_IP "192.168.137.12" //Should be Static IP of the master
 //Wifi & UDP
 
 //UART
@@ -51,7 +51,7 @@
 //Heartpiece is to define the type of heartpiece used in the preset.
 //Pipe_Length is to define the amount of pipe pieces need to be shown on the puzzle grid in the master.
 //Pipe_Delay is to define the delay of the leds (How long does it take for the leds to through the pipe piece) 
-#define XFACTOR 5 //Standardised delay factor for standard length pipe pieces
+#define XFACTOR 20 //Standardised delay factor for standard length pipe pieces
 
 #define SELECTEDPRESET PRESET_1_DEBUGCROSS //This is where you select the type of pipe you're using
 #define PRESET_1_DEBUGCROSS 1

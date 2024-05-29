@@ -91,7 +91,7 @@ void    Comms::connect()
   Serial.println("(Re)Connecting to WiFi");
 
   uint8_t attempts = 0;
-  WiFi.begin(SSID, PASSWORD);
+  WiFi.begin(WIFI_SSID, PASSWORD);
   while (WiFi.status() != WL_CONNECTED)
   {
     if (attempts++ > TIMEOUTATTEMPTS)
@@ -101,7 +101,7 @@ void    Comms::connect()
     }
     delay(1000);
     Serial.print("Attempting connection to ");
-    Serial.print(SSID);
+    Serial.print(WIFI_SSID);
     Serial.print(" (");
     Serial.print(attempts);
     Serial.print("/");
@@ -126,12 +126,49 @@ void    Comms::connect()
 }
 void    Comms::tick()
 {
+  uint64_t currentMillis = millis();
+
   // Check if the WiFi is still connected, if not, reconnect
   if (WiFi.status() != WL_CONNECTED) connect();
 
+  //Incoming messages & Parsing
   receiveAndParse();
+
+  //Session check
+  if (currentMillis - lastMillis_SessionCheck > INTERVAL_SESSIONCHECK)
+  {
+    lastMillis_SessionCheck = currentMillis;
+    transmit(MESSAGE_DUPL_SESSIONCHECK+String(sessionID));
+  }
+    
+  //Putting received messages in memory accessable for main_leds
+  if (memoryReservedBy == RESERVATION_NONE)
+  {
+    memoryReservedBy = RESERVATION_MAIN;
+    for (uint8_t i = 0; i < ledUpdates_buffer.size(); i++)
+    {
+      ledUpdates.push_back(ledUpdates_buffer[i]);
+      ledUpdates_buffer.erase(ledUpdates_buffer.begin() + i);
+    }
+    memoryReservedBy = RESERVATION_NONE;
+  }
+
 }
 uint8_t *Comms::getModuleID()
 {
     return &moduleID;
+}
+std::vector<LedUpdate> Comms::getLedUpdates()
+{
+  std::vector<LedUpdate> ledUpdatesToReturn;
+
+  if (memoryReservedBy == RESERVATION_NONE)
+  {
+    memoryReservedBy = RESERVATION_LEDS;
+    ledUpdatesToReturn = ledUpdates;
+    ledUpdates.clear();
+    memoryReservedBy = RESERVATION_NONE;
+    return ledUpdatesToReturn;
+  }
+  return ledUpdatesToReturn;
 }

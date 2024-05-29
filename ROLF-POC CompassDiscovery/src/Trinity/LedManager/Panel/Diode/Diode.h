@@ -24,7 +24,7 @@ private:
   EffectVariables                           effectVariables;
   uint16_t                                  offsetTimer;
 
-  bool effectFinished;
+  bool                                      effectFinished;
 
 public:
   Diode                                     (uint16_t number, uint8_t *panelEffect);
@@ -34,6 +34,7 @@ public:
   void      setGoalBrightness                   (uint8_t goalBrightness);
   void      setVfx                          (VFXData vfxData);
   void      setDataCustom                   (CustomPalette *customPalette);
+  bool      getEffectFinished               ();
   //Technical
   CRGB      getRGB                          (uint8_t sysBrightness);
   void      resetFXProcessingVars           ();

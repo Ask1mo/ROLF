@@ -42,14 +42,16 @@ void      Diode::tick()
       {
         effectVariables.c = colour;
       }
+
       
       if (!effectFinished) effectFinished = processEffect(*effect, &effectVariables, customPalette);
 
-
+      
       if(colour == COLOUR_CYCLE && effectFinished)
       {
         effectVariables.c++;
         if(effectVariables.c == AMOUNTOFCOLOURS) effectVariables.c = (COLOUR_BLACK + 1);
+        effectFinished = false;
       }
       else if (effectFinished)
       {
@@ -87,6 +89,10 @@ void      Diode::setVfx(VFXData vfxData)
 void      Diode::setDataCustom(CustomPalette *customPalette)
 {
   this->customPalette = customPalette;
+}
+bool      Diode::getEffectFinished()
+{
+  return effectFinished;
 }
 //Technical
 CRGB      Diode::getRGB(uint8_t sysBrightness)

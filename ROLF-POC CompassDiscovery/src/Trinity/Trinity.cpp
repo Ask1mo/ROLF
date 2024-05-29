@@ -125,6 +125,15 @@ void Trinity::setPanelDiodeVfx(uint8_t panelNumber, uint16_t diodeNumber, VFXDat
 {
   ledManager->setPanelDiodeVfx(panelNumber, diodeNumber, vfxData);
 }
+void Trinity::setPanelBrightness(uint8_t panelNumber, uint8_t brightness, bool smoothEnabled)
+{
+  ledManager->setPanelBrightness(panelNumber, brightness, smoothEnabled);
+}
+
+bool Trinity::getPanelEffectFinished(uint8_t panelNumber)
+{
+  return ledManager->getPanelEffectFinished(panelNumber);
+}
 
 void Trinity::setCustomPaletteColours(uint8_t slot, uint8_t colourRGBNumber, ColourRGB colourRGB)
 {

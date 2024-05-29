@@ -41,6 +41,9 @@ public:
     void setPanelVfx(uint8_t panelNumber, VFXData vfxData);
     uint16_t getPanelDiodeAmount(uint8_t panelNumber);
     void setPanelDiodeVfx(uint8_t panelNumber, uint16_t diodeNumber, VFXData vfxData);
+    void setPanelBrightness(uint8_t panelNumber, uint8_t brightness, bool smoothEnabled);
+    
+    bool getPanelEffectFinished(uint8_t panelNumber);
 
     void setCustomPaletteColours(uint8_t slot, uint8_t colourRGBNumber, ColourRGB colourRGB);
     void setCustomPaletteAvailableColours(uint8_t slot, uint8_t avalaibleColours);

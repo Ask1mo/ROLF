@@ -104,9 +104,14 @@ void      Panel::tick                       ()
   }
 }
 //Effects
-void      Panel::setGoalBrightness              (uint8_t goalBrightness)
+void      Panel::setGoalBrightness              (uint8_t goalBrightness, bool smoothEnabled)
 {
-  this->goalBrightness  = goalBrightness;
+  if (smoothEnabled) this->goalBrightness  = goalBrightness;
+  else
+  {
+    this->brightness = goalBrightness;
+    this->goalBrightness = goalBrightness;
+  }
 }
 void      Panel::setVfx                     (VFXData vfxData)
 {
@@ -146,6 +151,22 @@ void      Panel::setDataCustom              (CustomPalette *customPaletteArg)
     Serial.println(F("Is now:"));
     printDebug();
   }
+}
+bool      Panel::getEffectFinished          ()
+{
+  if (detailed)
+  {
+    for (uint8_t i = 0; i < diodeAmount; i++)
+    {
+      if (!diodes[i]->getEffectFinished())
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  return false;
 }
 //Diode Effects
 void      Panel::setDiodeGoalBrightness         (uint16_t diodeNumber, uint8_t goalBrightness)
@@ -236,7 +257,7 @@ CRGB      Panel::getDiodeRGB                (uint8_t number, uint8_t sysBrightne
     return CRGB(r, g, b);
   }
 
-  return diodes[number]->getRGB(sysBrightness);
+  return diodes[number]->getRGB(sysBrightness * this->brightness / 255);
 }
 uint16_t  Panel::getDiodeAmount             ()
 {
@@ -301,6 +322,8 @@ String    Panel::convertToTransmission      ()
 
   return data;
   #endif
+
+  return "";
 }
 String    Panel::convertDiodeToTransmission (uint16_t diodeNumber)
 {

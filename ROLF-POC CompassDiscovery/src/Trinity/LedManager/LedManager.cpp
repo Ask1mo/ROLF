@@ -201,10 +201,10 @@ void      LedManager::setSpeed                          (uint8_t speed)
   this->speed = speed;
 }
 //Panel Effects
-void      LedManager::setPanelBrightness                (uint8_t panelNumber, uint8_t goalBrightness)
+void      LedManager::setPanelBrightness                (uint8_t panelNumber, uint8_t goalBrightness, bool smoothEnabled)
 {
   //Serial.println("Setting panel data (In ledmanager)");
-  panels[panelNumber]->setGoalBrightness(goalBrightness);
+  panels[panelNumber]->setGoalBrightness(goalBrightness, smoothEnabled);
 }
 void      LedManager::setPanelVfx                       (uint8_t panelNumber, VFXData vfxData)
 {
@@ -216,10 +216,14 @@ void      LedManager::setPanelVfx                       (uint8_t panelNumber, VF
     panels[panelNumber]->setDataCustom(customPalette[vfxData.colour]);
   }
 }
-//Diode Effects
-void      LedManager::setPanelBrightness                (uint8_t panelNumber, uint16_t diodeNumber, uint8_t goalBrightness)
+bool      LedManager::getPanelEffectFinished            (uint8_t panelNumber)
 {
-  
+  return panels[panelNumber]->getEffectFinished();
+}
+//Diode Effects
+void      LedManager::setPanelDiodeBrightness           (uint8_t panelNumber, uint16_t diodeNumber, uint8_t goalBrightness)
+{
+  panels[panelNumber]->setDiodeGoalBrightness(diodeNumber, goalBrightness);
 }
 void      LedManager::setPanelDiodeVfx                  (uint8_t panelNumber, uint16_t diodeNumber, VFXData vfxData)
 {

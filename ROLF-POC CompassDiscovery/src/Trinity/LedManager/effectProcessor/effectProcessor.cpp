@@ -5,6 +5,7 @@ bool processEffect(uint8_t effect, EffectVariables *effectVariables, CustomPalet
 {
   bool effectFinished = false;
 
+
   switch (effect)
   {
     case EFFECT_STOCK_STATIC:
@@ -314,6 +315,15 @@ bool stock_breathing        (EffectVariables *effectVariables)
 }
 bool stock_pausedbreathing  (EffectVariables *effectVariables)
 {
+
+  //uint8_t                                   r;
+  //uint8_t                                   g;
+  //uint8_t                                   b;
+  //uint8_t                                   d; //Dummy
+  //uint8_t                                   c; //Current colour (Can cycle because of COLOUR_COLOURCYCLE)
+  //uint8_t                                   fxProgression; //Current part of the effect
+
+
   bool allowR = getColourClearance(effectVariables->c, COLOUR_RED);
   bool allowG = getColourClearance(effectVariables->c, COLOUR_GREEN);
   bool allowB = getColourClearance(effectVariables->c, COLOUR_BLUE);

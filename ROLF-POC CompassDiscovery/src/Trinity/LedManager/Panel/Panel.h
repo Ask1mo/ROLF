@@ -52,9 +52,10 @@ public:
   //Standard
   void      tick                            ();
   //Effects
-  void      setGoalBrightness                   (uint8_t goalBrightness);
+  void      setGoalBrightness               (uint8_t goalBrightness, bool smoothEnabled);
   void      setVfx                          (VFXData vfxData);
   void      setDataCustom                   (CustomPalette *customPaletteArg);
+  bool      getEffectFinished               ();
   //Diode Effects
   void      setDiodeGoalBrightness              (uint16_t diodeNumber, uint8_t goalBrightness);
   void      setDiodeVfx                     (uint16_t diodeNumber, VFXData vfxData);
