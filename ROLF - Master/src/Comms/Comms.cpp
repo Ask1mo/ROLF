@@ -4,7 +4,8 @@ Comms::Comms()
 {
   sessionID = (uint8_t)esp_random();
   Serial.println("Session ID: " + String(sessionID));
-    //Have comms.connect() here?
+  
+  connect();
 }
 
 void    Comms::reboot(String message)

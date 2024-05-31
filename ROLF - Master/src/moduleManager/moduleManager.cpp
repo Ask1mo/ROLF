@@ -44,7 +44,7 @@ ModuleManager::ModuleManager()
 }
 
 //Private
-bool ModuleManager::checkModuleID(uint8_t moduleID)
+bool ModuleManager::getIsModuleAlreadyKnown(uint8_t moduleID)
 {
     for (uint8_t i = 0; i < connectedModules.size(); i++)
     {
@@ -649,6 +649,121 @@ void ModuleManager::editPuzzleGridPart(uint8_t x, uint8_t y, ConnectedModule *pa
     puzzlePieces[x][y].pieceType = pieceType;
     puzzlePieces[x][y].basePiece = basePiece;
 }
+void ModuleManager::tempPathfindingDemo()
+{
+    if (connectedModules.size() < 2) return;
+    Serial.println("Minimum 2 modules found: Pathfinding");
+
+
+    //Get start and end coordinates by getting random heart pieces (Have to be puzzle placed)
+    uint16_t attempts = 0;
+    ConnectedModule *pathfindModuleA;
+    while (true)
+    {
+        attempts++;
+        if (attempts > 1000) return;
+        pathfindModuleA = connectedModules[random(0, connectedModules.size()-1)];
+        if (pathfindModuleA->getPuzzlePlaced()) break;
+    }
+    Serial.print("Module A found: ");
+    Serial.println(pathfindModuleA->getModuleID());
+
+
+    ConnectedModule *pathfindModuleB;
+    while (true)
+    {
+        attempts++;
+        if (attempts > 1000) return;
+        pathfindModuleB = connectedModules[random(0, connectedModules.size()-1)];
+        if(!pathfindModuleB->getPuzzlePlaced() || pathfindModuleB->getModuleID() != pathfindModuleA->getModuleID()) break;
+    }
+    Serial.print("Module B found: ");
+    Serial.println(pathfindModuleB->getModuleID());
+
+    Serial.print("Pathfinding from ");
+    Serial.print(pathfindModuleA->getModuleID());
+    Serial.print(" to ");
+    Serial.println(pathfindModuleB->getModuleID());
+        
+
+
+    uint8_t x = 0;
+    uint8_t y = 0;
+    getOldModuleCoords(pathfindModuleA->getModuleID(), &x, &y);
+    XYZ start = XYZ{x, y, 0};
+        
+    getOldModuleCoords(pathfindModuleB->getModuleID(), &x, &y);
+    XYZ end = XYZ{x, y, 0};
+        
+    std::vector<XYZ> path = tracePath(start, end);
+    Serial.println("Path:");
+    for (uint8_t i = 0; i < path.size(); i++)
+    {
+        Serial.print("(");
+        Serial.print(path[i].x);
+        Serial.print(", ");
+        Serial.print(path[i].y);
+        Serial.println(")");
+    }
+
+
+
+
+    //If a path has been found
+    if (path.size() > 0)
+    {
+        //Get the module ID's of the path
+        std::vector<uint8_t> pathModuleIDs;
+        std::vector<ModuleLedInfo_Output> pipeInstructions;
+        for (uint8_t i = 0; i < path.size(); i++)
+        {
+            uint8_t colour =  (uint8_t)random(1, 7);
+            //Check if the ID hasnt been added yet
+            for (uint8_t j = 0; j < pathModuleIDs.size(); j++)
+            {
+                if (pathModuleIDs[j] == puzzlePieces[path[i].x][path[i].y].parentModule->getModuleID())
+                {
+                    pathModuleIDs.push_back(puzzlePieces[path[i].x][path[i].y].parentModule->getModuleID());
+                } 
+            }
+            
+            //Check if current module is a heart piece
+            if (puzzlePieces[path[i].x][path[i].y].pieceType == PUZZLEPIECE_TYPE_HEART)
+            {
+                //Get module
+                ConnectedModule *currentModule = puzzlePieces[path[i].x][path[i].y].parentModule;
+                //Get directions of previous and next pipe
+                uint8_t previousPipeDirection = 0;
+                uint8_t nextPipeDirection = 0;
+                if (i > 0) //(To prevent out of bounds)
+                {
+                    if (path[i-1].x == path[i].x - 1) previousPipeDirection = DIRECTION_NORTH;
+                    if (path[i-1].y == path[i].y + 1) previousPipeDirection = DIRECTION_EAST;
+                    if (path[i-1].x == path[i].x + 1) previousPipeDirection = DIRECTION_SOUTH;
+                    if (path[i-1].y == path[i].y - 1) previousPipeDirection = DIRECTION_WEST;
+                }
+                if (i < path.size() - 1) //(To prevent out of bounds)
+                {
+                    if (path[i+1].x == path[i].x - 1) nextPipeDirection = DIRECTION_NORTH;
+                    if (path[i+1].y == path[i].y + 1) nextPipeDirection = DIRECTION_EAST;
+                    if (path[i+1].x == path[i].x + 1) nextPipeDirection = DIRECTION_SOUTH;
+                    if (path[i+1].y == path[i].y - 1) nextPipeDirection = DIRECTION_WEST;
+                }
+                
+                uint16_t newDelay;
+                if  (path.size() > 1) newDelay = pipeInstructions[path.size()].delayOffset + pipeInstructions[path.size()].delayMine;                    
+                else newDelay = 0;
+                
+                uint16_t ownDelay = currentModule->getPipeDelayFromCompensatedDirection(previousPipeDirection);
+                ownDelay = currentModule->getPipeDelayFromCompensatedDirection(nextPipeDirection);
+                
+                
+                ModuleLedInfo_Output pipeInstruction = ModuleLedInfo_Output{currentModule->getModuleID(), previousPipeDirection, nextPipeDirection, colour, newDelay, ownDelay};
+                bufferedTransmissions.push_back(pipeInstruction);
+            }
+        }  
+    }
+}
 std::vector<XYZ> ModuleManager::tracePath(XYZ start, XYZ end)
 {
     //Serial.println("Prepping path tracer");
@@ -844,7 +959,6 @@ bool ModuleManager::isMovementAllowed(XYZ current, uint8_t direction)
         if (puzzleVisitInfo[current.x][current.y - 1].visited) return false;
         break;
     }
-    //Serial.println("Passed visited test");
 
     return true;
 }
@@ -853,157 +967,25 @@ bool ModuleManager::isMovementAllowed(XYZ current, uint8_t direction)
 //Public
 void ModuleManager::tick()
 {
+    uint64_t currentMillis = millis();
+
     //Draw puzzle grid every INTERVAL_DRAWPUZZLE
-    if (millis() - lastMillis_PuzzleDraw > INTERVAL_DRAWPUZZLE)
+    if (currentMillis - lastMillis_PuzzleDraw > INTERVAL_DRAWPUZZLE)
     {
-        lastMillis_PuzzleDraw = millis();
+        lastMillis_PuzzleDraw = currentMillis;
         printPuzzleGrid();
         
     }
 
-    //Pathfinding demo
-    if (millis() - lastMillis_PathFindDemo > INTERVAL_PATHFINDDEMO)
+    //Temp pathfinding demo every INTERVAL_PATHFINDDEMO
+    if (currentMillis - lastMillis_PathFindDemo > INTERVAL_PATHFINDDEMO)
     {
-        if (connectedModules.size() < 2) return;
-
-        Serial.println("Minimum 2 modules found: Pathfinding");
-
-        //Reset pathfinding
-        lastMillis_PathFindDemo = millis();
-
-
-        //Get start and end coordinates by getting random heart pieces (Have to be puzzle placed)
-        uint16_t attempts = 0;
-
-        ConnectedModule *pathfindModuleA;
-        while (true)
-        {
-            attempts++;
-            if (attempts > 1000) return;
-            pathfindModuleA = connectedModules[random(0, connectedModules.size()-1)];
-            if (pathfindModuleA->getPuzzlePlaced()) break;
-        }
-
-        Serial.print("Module A found: ");
-        Serial.println(pathfindModuleA->getModuleID());
-
-        ConnectedModule *pathfindModuleB;
-        while (true)
-        {
-            attempts++;
-            if (attempts > 1000) return;
-            pathfindModuleB = connectedModules[random(0, connectedModules.size()-1)];
-            if(!pathfindModuleB->getPuzzlePlaced() || pathfindModuleB->getModuleID() != pathfindModuleA->getModuleID()) break;
-        }
-
-        Serial.print("Module B found: ");
-        Serial.println(pathfindModuleB->getModuleID());
-
-        Serial.print("Pathfinding from ");
-        Serial.print(pathfindModuleA->getModuleID());
-        Serial.print(" to ");
-        Serial.println(pathfindModuleB->getModuleID());
-        
-
-
-        uint8_t x = 0;
-        uint8_t y = 0;
-        getOldModuleCoords(pathfindModuleA->getModuleID(), &x, &y);
-        XYZ start = XYZ{x, y, 0};
-        
-        getOldModuleCoords(pathfindModuleB->getModuleID(), &x, &y);
-        XYZ end = XYZ{x, y, 0};
-        
-        std::vector<XYZ> path = tracePath(start, end);
-        Serial.println("Path:");
-        for (uint8_t i = 0; i < path.size(); i++)
-        {
-            Serial.print("(");
-            Serial.print(path[i].x);
-            Serial.print(", ");
-            Serial.print(path[i].y);
-            Serial.println(")");
-        }
-
-
-
-
-        //If a path has been found
-        if (path.size() > 0)
-        {
-            //Get the module ID's of the path
-            std::vector<uint8_t> pathModuleIDs;
-            std::vector<ModuleLedInfo_Output> pipeInstructions;
-            for (uint8_t i = 0; i < path.size(); i++)
-            {
-                uint8_t colour =  (uint8_t)random(1, 7);
-
-                //Check if the ID hasnt been added yet
-                for (uint8_t j = 0; j < pathModuleIDs.size(); j++)
-                {
-                    if (pathModuleIDs[j] == puzzlePieces[path[i].x][path[i].y].parentModule->getModuleID())
-                    {
-                        pathModuleIDs.push_back(puzzlePieces[path[i].x][path[i].y].parentModule->getModuleID());
-                    } 
-                }
-                
-                //Check if current module is a heart piece
-                if (puzzlePieces[path[i].x][path[i].y].pieceType == PUZZLEPIECE_TYPE_HEART)
-                {
-                    //Get module
-                    ConnectedModule *currentModule = puzzlePieces[path[i].x][path[i].y].parentModule;
-
-                    //Get directions of previous and next pipe
-                    uint8_t previousPipeDirection = 0;
-                    uint8_t nextPipeDirection = 0;
-                    if (i > 0) //(To prevent out of bounds)
-                    {
-                        if (path[i-1].x == path[i].x - 1) previousPipeDirection = DIRECTION_NORTH;
-                        if (path[i-1].y == path[i].y + 1) previousPipeDirection = DIRECTION_EAST;
-                        if (path[i-1].x == path[i].x + 1) previousPipeDirection = DIRECTION_SOUTH;
-                        if (path[i-1].y == path[i].y - 1) previousPipeDirection = DIRECTION_WEST;
-                        //previousPipeDirection = puzzlePieces[path[i].x][path[i].y].parentModule->getConnectorFromCompensatedDirection(previousPipeDirection).compassDirection; //Convert compensated direciton to normal compass direction
-                    }
-                    if (i < path.size() - 1) //(To prevent out of bounds)
-                    {
-                        if (path[i+1].x == path[i].x - 1) nextPipeDirection = DIRECTION_NORTH;
-                        if (path[i+1].y == path[i].y + 1) nextPipeDirection = DIRECTION_EAST;
-                        if (path[i+1].x == path[i].x + 1) nextPipeDirection = DIRECTION_SOUTH;
-                        if (path[i+1].y == path[i].y - 1) nextPipeDirection = DIRECTION_WEST;
-                        //nextPipeDirection = puzzlePieces[path[i].x][path[i].y].parentModule->getConnectorFromCompensatedDirection(nextPipeDirection).compassDirection; //Convert compensated direciton to normal compass direction
-                    }
-                    
-                    uint16_t newDelay;
-                    if  (path.size() > 1) newDelay = pipeInstructions[path.size()].delayOffset + pipeInstructions[path.size()].delayMine;                    
-                    else newDelay = 0;
-                    
-
-                    uint16_t ownDelay = currentModule->getPipeDelayFromCompensatedDirection(previousPipeDirection);
-                    ownDelay = currentModule->getPipeDelayFromCompensatedDirection(nextPipeDirection);
-                    
-                    
-                    ModuleLedInfo_Output pipeInstruction = ModuleLedInfo_Output{currentModule->getModuleID(),previousPipeDirection, nextPipeDirection, ownDelay, colour};
-                    bufferedTransmissions.push_back(pipeInstruction);
-                }
-            }
-                //Get the input pipe direction of this module
-
-
-
-                //Get the output pipe direction of this module
-                
-            //Get the durationValue of the pipes connected to the module.
-            
-            //Calculate the delays for every module.
-
-            //Get a colour for the path
-
-            //Send to module: Input direction, output direction, delay, colour. (Colour is the same for all modules)
-
-            
-        }
+        lastMillis_PathFindDemo = currentMillis;
+        tempPathfindingDemo();
     }
 
+    
+    //Check if the board is empty, if so, place the first puzzle piece in the middle
     if (boardIsEmpty)
     {
         if (connectedModules.size() > 0)
@@ -1098,7 +1080,7 @@ uint8_t ModuleManager::addNewModule(NewClientInfo newClientInfo)
 
     // Add new module, assign new ID: Get lowest available ID (This ID is not the size of the vector, because disconnected modules may have left gaps in the ID sequence)
     uint8_t newModuleID = 1;
-    while (checkModuleID(newModuleID))
+    while (getIsModuleAlreadyKnown(newModuleID))
     {
         if (newModuleID == 255)
         {

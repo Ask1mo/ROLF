@@ -127,6 +127,8 @@ CompassConnector ConnectedModule::getConnectorFromCompensatedDirection(uint8_t c
             return compassConnectors[i];
         }
     }
+
+    return {0, 0, 0, 0};
 }
 
 
