@@ -2,6 +2,7 @@
 #define SETUP_H
 
 #include <Arduino.h>
+#include "dataTypes.h"
 
 #define DEBUG_DISABLED              0
 #define DEBUG_ERRORS                1

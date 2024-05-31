@@ -5,6 +5,24 @@
 //MAX MODULES: 255 (This is okay, system will probably only have around 100 modules)
 
 
+#define XFACTOR 5
+BaseInfo getBaseInfo(uint8_t presetID) //Different presets are defined here. This should a temporary solution.
+{
+
+  switch (presetID)
+  {
+    case PRESET_1_DEBUGCROSS:
+      return BaseInfo{PRESET_1_DEBUGCROSS,BASE_HEART_X,         2,2*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    0,0,            0,0};
+    break;
+    case PRESET_2_AllCross1:
+      return BaseInfo{PRESET_2_AllCross1,BASE_HEART_XUPDOWN,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR};
+    break;
+  }
+  Serial.print("Preset not found: ");
+  Serial.println(presetID);
+  return BaseInfo{0,0,0,0,0,0,0,0,0,0,0,0,0};
+}
+
 
 
 
@@ -1001,17 +1019,19 @@ void ModuleManager::tick()
         if(!connectedModules[i]->getPuzzlePlaced()) tryFitPuzzlePiece(connectedModules[i]);
     }
 }
-uint8_t ModuleManager::addNewModule(String macAdress, String ipAdress, BaseInfo baseInfo)
+uint8_t ModuleManager::addNewModule(NewClientInfo newClientInfo)
 {
     // Check if MAC adress has already been logged, In which case: Look up existing module with that MAC adress and update it's IP adress
     // Also check if the IP adress is already logged. In which case: Remove existing module with that IP adress and add new module. (The device with the old IP adress is probably disconnected)
     // If no module is found with the given MAC adress or IP adress, add new module and assign new ID to new module
 
+    BaseInfo baseInfo = getBaseInfo(newClientInfo.templateID);
+
     Serial.print("Adding new module: ");
     Serial.print("MAC: ");
-    Serial.print(macAdress);
+    Serial.print(newClientInfo.macAdress);
     Serial.print(" IP: ");
-    Serial.println(ipAdress);
+    Serial.println(newClientInfo.ipAdress);
 
     Serial.print("Template ID: ");
     Serial.print(baseInfo.id);
@@ -1049,20 +1069,20 @@ uint8_t ModuleManager::addNewModule(String macAdress, String ipAdress, BaseInfo 
     Serial.println(baseInfo.downPipeDelay);
 
 
-    uint8_t moduleID = getModuleID_macAdress(macAdress);// stays 0 if no module is found
+    uint8_t moduleID = getModuleID_macAdress(newClientInfo.macAdress);// stays 0 if no module is found
 
     //If moduleID is not 0, a module with the given MAC adress is found. If it is 0, no module is found with the given MAC adress, thus a new module should be added
     if (moduleID) 
     {
         Serial.println("MAC adress already logged, updating IP adress");
-        if (!updateModule(moduleID, macAdress, ipAdress)) return 0; //If the module failed to update, return 0
+        if (!updateModule(moduleID, newClientInfo.macAdress, newClientInfo.ipAdress)) return 0; //If the module failed to update, return 0
     }
     
 
     // Check if IP adress has already been logged. In which case: Remove existing module with that IP adress and add new module. (The device with the old IP adress is probably disconnected)
     for (uint8_t i = 0; i < connectedModules.size(); i++)
     {
-        if (connectedModules[i]->getIpAdress() == ipAdress && connectedModules[i]->getMacAdress() != macAdress) //If the IP adress is found, but the MAC adress is different
+        if (connectedModules[i]->getIpAdress() == newClientInfo.ipAdress && connectedModules[i]->getMacAdress() != newClientInfo.macAdress) //If the IP adress is found, but the MAC adress is different
         {
             Serial.println("IP adress duplicate found, removing old module with IP adress:");
             //Free up memory
@@ -1087,18 +1107,29 @@ uint8_t ModuleManager::addNewModule(String macAdress, String ipAdress, BaseInfo 
         }
         newModuleID++;
     }
-    connectedModules.push_back(new ConnectedModule(macAdress, ipAdress, newModuleID, baseInfo));
+    connectedModules.push_back(new ConnectedModule(newClientInfo.macAdress, newClientInfo.ipAdress, newModuleID, baseInfo));
     return newModuleID;
 }
-void ModuleManager::updateModuleConnection(uint8_t moduleID, uint8_t direction, uint8_t neighborID, uint8_t neighborDirection)
+void ModuleManager::updateModuleConnection(ModuleChangeInfo moduleChangeInfo)
 {
-    ConnectedModule *module = getModule(moduleID);
+
+    Serial.print("Connection changed at module ");
+    Serial.print(moduleChangeInfo.moduleID);
+    Serial.print(": in direction ");
+    Serial.print(directionToString(moduleChangeInfo.direction));
+    Serial.print(" to module ");
+    Serial.print(moduleChangeInfo.neighborID);
+    Serial.print(" on their direction ");
+    Serial.println(directionToString(moduleChangeInfo.neighborDirection));
+
+
+    ConnectedModule *module = getModule(moduleChangeInfo.moduleID);
     if (module == NULL)
     {
         Serial.println("Module not found");
         return;
     }
-    module->updateConnection(direction, neighborID, neighborDirection);
+    module->updateConnection(moduleChangeInfo.direction, moduleChangeInfo.neighborID, moduleChangeInfo.neighborDirection);
 }
 bool ModuleManager::getLedTransmission(String *transmission, String *ipAdress)
 {

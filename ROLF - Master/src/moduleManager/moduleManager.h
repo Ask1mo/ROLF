@@ -16,16 +16,7 @@
 
 
 
-struct ModuleLedInfo_Output
-{
-    uint8_t moduleID;
-    uint8_t inputDirection;
-    uint8_t outputDirection;
-    uint8_t color;
-    uint16_t delayOffset;
-    uint16_t delayMine;
-    
-};
+
 
 struct XYZ
 {
@@ -86,8 +77,8 @@ class ModuleManager
     public:
     ModuleManager();
     void tick();
-    uint8_t addNewModule(String macAdress, String ipAdress, BaseInfo baseInfo);
-    void updateModuleConnection(uint8_t moduleID, uint8_t direction, uint8_t neighborID, uint8_t neighborDirection);
+    uint8_t addNewModule(NewClientInfo newClientInfo);
+    void updateModuleConnection(ModuleChangeInfo moduleChangeInfo);
     bool getLedTransmission(String *transmission, String *ipAdress);
 };
 

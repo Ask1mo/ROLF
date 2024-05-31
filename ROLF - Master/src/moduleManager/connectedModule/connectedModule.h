@@ -34,29 +34,7 @@ struct CompassConnector
   uint8_t neighborDirection; //Connected NEWSUD of a neigbor
 };
 
-struct BaseInfo
-{
-  uint8_t id;
-  uint8_t heartPiece;
-  
-  uint8_t northPipeLength;
-  uint16_t northPipeDelay;
-  
-  uint8_t eastPipeLength;
-  uint16_t eastPipeDelay;
-  
-  uint8_t southPipeLength;
-  uint16_t southPipeDelay;
-  
-  uint8_t westPipeLength;
-  uint16_t westPipeDelay;
-  
-  uint8_t upPipeLength;
-  uint16_t upPipeDelay;
-  
-  uint8_t downPipeLength;
-  uint16_t downPipeDelay;
-};
+
 
 class ConnectedModule
 {
