@@ -9,6 +9,7 @@
 #include "setup.h"
 
 
+
 #define PULSELENGTH_ID 5
 
 
@@ -43,6 +44,8 @@ TaskHandle_t Task2;
 ConnectorManager *connectorManager;
 Trinity *trinity;
 Comms comms;
+volatile bool commsIsConnected = false;
+uint64_t lastHornMillis = 0;
 
 void task_main( void *pvParameters );
 void task_leds( void *pvParameters );

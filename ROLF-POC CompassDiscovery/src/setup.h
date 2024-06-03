@@ -17,7 +17,7 @@
 //Wifi & UDP
 #define WIFI_SSID "GLOWII"               //Wifi name
 #define PASSWORD "AskimoGlow"       //Password,                                                                                                 //TODO: needs changing
-#define SERVER_IP "192.168.137.12" //Should be Static IP of the master
+#define SERVER_IP "192.168.137.160" //Should be Static IP of the master
 //Wifi & UDP
 
 //UART
@@ -41,8 +41,8 @@
 #define PIN_SYNC_DOWN    16
 
 #define PIN_DEAD            12      //A pin needed to keep the serial communication half-duplex. The unused pins are assigned to this pin.
-#define PIN_BUTTON          13      //A debug button                                                                                            //TODO: Remove
 #define PIN_LEDS            22      //The pin that controls the LED strip
+#define PIN_MICROPHONE      34
 //Pinout
 
 /*---=== Module/Pipe Presets ===---*/
@@ -53,9 +53,13 @@
 //Pipe_Delay is to define the delay of the leds (How long does it take for the leds to through the pipe piece) 
 #define XFACTOR 20 //Standardised delay factor for standard length pipe pieces
 
-#define SELECTEDPRESET PRESET_1_DEBUGCROSS //This is where you select the type of pipe you're using
-#define PRESET_1_DEBUGCROSS 1
-#define PRESET_2_AllCross1 2
+#define SELECTEDPRESET PRESET_3_STRIJP_SINGLEPIPE //This is where you select the type15 of pipe you're using
+#define PRESET_1_DEBUGCROSS         1
+#define PRESET_2_AllCross1          2
+#define PRESET_3_STRIJP_SINGLEPIPE  3
+#define PRESET_253_STRIJP_HORNWEIRD 253
+#define PRESET_254_STRIJP_HORNLONG  254
+#define PRESET_255_Horn             255
 
 /*---=== Module/Pipe Presets ===---*/
 

@@ -97,9 +97,14 @@ bool ConnectedModule::checkHasNeighbor(uint8_t neighborID)
     {
         if (compassConnectors[i].neighborAdress == neighborID)
         {
+            //Serial.print("ConnectedModule::checkHasNeighbor: Neighbor found with ID ");
+          //  Serial.println(neighborID);
             return true; //Return the direction of the neighbor.
         }
     }
+
+  //  Serial.print("ERROR: ConnectedModule::checkHasNeighbor: No neighbor found with ID");
+ //   Serial.println(neighborID);
     return false;
 }
 
@@ -152,7 +157,6 @@ void ConnectedModule::rotate(uint8_t rotation)
         Serial.print(" to ");
         Serial.println(directionToString(compassConnectors[i].rotationCompensatedDirection));
     }
-    
 }
 
 CompassConnector ConnectedModule::getConnectorFromID(uint8_t neighborID)

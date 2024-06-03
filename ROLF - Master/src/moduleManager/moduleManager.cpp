@@ -6,9 +6,8 @@
 
 
 #define XFACTOR 5
-BaseInfo getBaseInfo(uint8_t presetID) //Different presets are defined here. This should a temporary solution.
+BaseInfo getBaseInfo(uint8_t presetID)
 {
-
   switch (presetID)
   {
     case PRESET_1_DEBUGCROSS:
@@ -17,14 +16,22 @@ BaseInfo getBaseInfo(uint8_t presetID) //Different presets are defined here. Thi
     case PRESET_2_AllCross1:
       return BaseInfo{PRESET_2_AllCross1,BASE_HEART_XUPDOWN,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR};
     break;
+    
+    case PRESET_3_STRIJP_SINGLEPIPE:
+      return BaseInfo{PRESET_3_STRIJP_SINGLEPIPE,BASE_HEART_X,  1,28,           0,0,            0,0,            0,0,            0,0,            0,0};
+    break;
+    case PRESET_253_STRIJP_HORNWEIRD:
+      return BaseInfo{PRESET_253_STRIJP_HORNWEIRD,BASE_HEART_X, 2,24,           0,0,            0,0,            0,0,            0,0,            0,0};
+    break;
+    case PRESET_254_STRIJP_HORNLONG:
+      return BaseInfo{PRESET_254_STRIJP_HORNLONG,BASE_HEART_X,  2,43,           0,0,            0,0,            0,0,            0,0,            0,0};
+    case PRESET_255_Horn:
+      return BaseInfo{PRESET_255_Horn,0b10000000,    1,1*XFACTOR,    0,0,    0,0,    0,0,    0,0,    0,0};
+    break;
   }
-  Serial.print("Preset not found: ");
-  Serial.println(presetID);
+  Serial.println("Preset not found");
   return BaseInfo{0,0,0,0,0,0,0,0,0,0,0,0,0};
 }
-
-
-
 
 //Constructor
 ModuleManager::ModuleManager()
@@ -55,7 +62,7 @@ bool ModuleManager::getIsModuleAlreadyKnown(uint8_t moduleID)
     }
     return false;
 }
-uint8_t ModuleManager::getModuleID_macAdress(String macAdress)
+uint8_t ModuleManager::getModuleIDfromMacAdress(String macAdress)
 {
     for (uint8_t i = 0; i < connectedModules.size(); i++)
     {
@@ -66,17 +73,7 @@ uint8_t ModuleManager::getModuleID_macAdress(String macAdress)
     }
     return 0; //Return 0 if no module is found with the given mac adress
 }
-uint8_t ModuleManager::findModule_ipAdress(String ipAdress)
-{
-    for (uint8_t i = 0; i < connectedModules.size(); i++)
-    {
-        if (connectedModules[i]->getIpAdress() == ipAdress)
-        {
-            return connectedModules[i]->getModuleID();
-        }
-    }
-    return 0; //Return 0 if no module is found with the given ip adress
-}
+
 bool ModuleManager::updateModule(uint8_t moduleID, String macAdress, String ipAdress)
 {
     ConnectedModule *connectedModule = getModule(moduleID);
@@ -250,12 +247,19 @@ void ModuleManager::printPuzzleGrid()
 
 void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
 {
+    //Serial.print("Trying to fit puzzle piece");
+    //Serial.println(newConnectedModule->getModuleID());
+
+
     ConnectedModule *oldConnectedModule = findOldConnectedModule(newConnectedModule->getModuleID());
     if (oldConnectedModule == NULL)return;
+  //  Serial.println("Old module found");
 
     //Check if both modules have found each other
     if (!oldConnectedModule->checkHasNeighbor(newConnectedModule->getModuleID())) return;
+   // Serial.println("Both modules have found each other");
     if (!newConnectedModule->checkHasNeighbor(oldConnectedModule->getModuleID())) return;
+  //  Serial.println("Both modules have found each other");
 
     printPuzzleGrid();
 
@@ -291,17 +295,34 @@ void ModuleManager::tryFitPuzzlePiece(ConnectedModule *newConnectedModule)
 
 ConnectedModule *ModuleManager::findOldConnectedModule(uint8_t newModuleID)
 {
+   // Serial.print("Finding old placed connected module that has module ");
+   // Serial.println(newModuleID);
     //Implementation:
     // 1. Find the piece on the board that the new module should connect to
     for (uint8_t i = 0; i < connectedModules.size(); i++)
     {
         
-        if (connectedModules[i]->getModuleID() == newModuleID) continue; //Skip the module that is being placed (Self)
-        if(!connectedModules[i]->getPuzzlePlaced()) continue; //Skip modules that aren't already placed on the board
+        if (connectedModules[i]->getModuleID() == newModuleID)
+        {
+           // Serial.print("Skipping self module ");
+           // Serial.println(newModuleID);
+            continue; //Skip the module that is being placed (Self)
+        }
+        if(!connectedModules[i]->getPuzzlePlaced())
+        {
+            //Serial.print("Skipping non placed module ");
+            continue; //Skip modules that aren't already placed on the board
+        }
         
         {
             //Find a module that has a neighbor that is the module that is being placed
-            if(connectedModules[i]->checkHasNeighbor(newModuleID)) return connectedModules[i];
+            if(connectedModules[i]->checkHasNeighbor(newModuleID))
+            {
+                //Serial.print("Found old connected module ");
+                //Serial.println(connectedModules[i]->getModuleID());
+                return connectedModules[i];
+        
+            }
         }
     }
     return NULL;
@@ -764,6 +785,93 @@ void ModuleManager::tempPathfindingDemo()
         }  
     }
 }
+bool ModuleManager::tempPathfindingDemoV2(uint8_t startModuleID, uint8_t endModuleID)
+{
+    Serial.print("Pathfinding from ");
+    Serial.print(startModuleID);
+    Serial.print(" to ");
+    Serial.println(endModuleID);
+        
+
+
+    uint8_t x = 0;
+    uint8_t y = 0;
+    getOldModuleCoords(startModuleID, &x, &y);
+    XYZ start = XYZ{x, y, 0};
+        
+    getOldModuleCoords(endModuleID, &x, &y);
+    XYZ end = XYZ{x, y, 0};
+        
+    std::vector<XYZ> path = tracePath(start, end);
+    Serial.println("Path:");
+    for (uint8_t i = 0; i < path.size(); i++)
+    {
+        Serial.print("(");
+        Serial.print(path[i].x);
+        Serial.print(", ");
+        Serial.print(path[i].y);
+        Serial.println(")");
+    }
+    Serial.println("End path");
+
+
+
+
+    //If a path has been found
+    if (path.size() == 0) return false;
+    
+    //Get the module ID's of the path
+    std::vector<uint8_t> pathModuleIDs;
+    std::vector<ModuleLedInfo_Output> pipeInstructions;
+    for (uint8_t i = 0; i < path.size(); i++)
+    {
+        uint8_t colour =  (uint8_t)random(1, 7);
+        //Check if the ID hasnt been added yet
+        for (uint8_t j = 0; j < pathModuleIDs.size(); j++)
+        {
+            if (pathModuleIDs[j] == puzzlePieces[path[i].x][path[i].y].parentModule->getModuleID())
+            {
+                pathModuleIDs.push_back(puzzlePieces[path[i].x][path[i].y].parentModule->getModuleID());
+            } 
+        }
+        
+        //Check if current module is a heart piece
+        if (puzzlePieces[path[i].x][path[i].y].pieceType == PUZZLEPIECE_TYPE_HEART)
+        {
+            //Get module
+            ConnectedModule *currentModule = puzzlePieces[path[i].x][path[i].y].parentModule;
+            //Get directions of previous and next pipe
+            uint8_t previousPipeDirection = 0;
+            uint8_t nextPipeDirection = 0;
+            if (i > 0) //(To prevent out of bounds)
+            {
+                if (path[i-1].x == path[i].x - 1) previousPipeDirection = DIRECTION_NORTH;
+                if (path[i-1].y == path[i].y + 1) previousPipeDirection = DIRECTION_EAST;
+                if (path[i-1].x == path[i].x + 1) previousPipeDirection = DIRECTION_SOUTH;
+                if (path[i-1].y == path[i].y - 1) previousPipeDirection = DIRECTION_WEST;
+            }
+            if (i < path.size() - 1) //(To prevent out of bounds)
+            {
+                if (path[i+1].x == path[i].x - 1) nextPipeDirection = DIRECTION_NORTH;
+                if (path[i+1].y == path[i].y + 1) nextPipeDirection = DIRECTION_EAST;
+                if (path[i+1].x == path[i].x + 1) nextPipeDirection = DIRECTION_SOUTH;
+                if (path[i+1].y == path[i].y - 1) nextPipeDirection = DIRECTION_WEST;
+            }
+            
+            uint16_t newDelay;
+            if  (path.size() > 1) newDelay = pipeInstructions[path.size()].delayOffset + pipeInstructions[path.size()].delayMine;                    
+            else newDelay = 0;
+            
+            uint16_t ownDelay = currentModule->getPipeDelayFromCompensatedDirection(previousPipeDirection);
+            ownDelay = currentModule->getPipeDelayFromCompensatedDirection(nextPipeDirection);
+            
+            
+            ModuleLedInfo_Output pipeInstruction = ModuleLedInfo_Output{currentModule->getModuleID(), previousPipeDirection, nextPipeDirection, colour, newDelay, ownDelay};
+            bufferedTransmissions.push_back(pipeInstruction);
+        }
+    }
+    return true;
+}
 std::vector<XYZ> ModuleManager::tracePath(XYZ start, XYZ end)
 {
     //Serial.println("Prepping path tracer");
@@ -962,7 +1070,18 @@ bool ModuleManager::isMovementAllowed(XYZ current, uint8_t direction)
 
     return true;
 }
+bool ModuleManager::isModuleAHorn(uint8_t templateID)
+{
+    if (templateID == 0) return false;
 
+    //Check if the module is a horn piece
+
+    if (templateID == PRESET_253_STRIJP_HORNWEIRD) return true;
+    if (templateID == PRESET_254_STRIJP_HORNLONG) return true;
+    if (templateID == PRESET_255_Horn) return true;
+
+    return false;
+}
 
 //Public
 void ModuleManager::tick()
@@ -977,12 +1096,15 @@ void ModuleManager::tick()
         
     }
 
+
+    /*
     //Temp pathfinding demo every INTERVAL_PATHFINDDEMO
     if (currentMillis - lastMillis_PathFindDemo > INTERVAL_PATHFINDDEMO)
     {
         lastMillis_PathFindDemo = currentMillis;
         tempPathfindingDemo();
     }
+    */
 
     
     //Check if the board is empty, if so, place the first puzzle piece in the middle
@@ -1051,7 +1173,7 @@ uint8_t ModuleManager::addNewModule(NewClientInfo newClientInfo)
     Serial.println(baseInfo.downPipeDelay);
 
 
-    uint8_t moduleID = getModuleID_macAdress(newClientInfo.macAdress);// stays 0 if no module is found
+    uint8_t moduleID = getModuleIDfromMacAdress(newClientInfo.macAdress);// stays 0 if no module is found
 
     //If moduleID is not 0, a module with the given MAC adress is found. If it is 0, no module is found with the given MAC adress, thus a new module should be added
     if (moduleID) 
@@ -1134,4 +1256,17 @@ bool ModuleManager::getLedTransmission(String *transmission, String *ipAdress)
     
     *ipAdress = getModule(output.moduleID)->getIpAdress();
     return true;
+}
+
+std::vector<uint8_t> ModuleManager::getFreeHornIDs(uint8_t excludedHornID)
+{
+    std::vector<uint8_t> freeHornIDs;
+    for (uint8_t i = 0; i < connectedModules.size(); i++)
+    {
+        if (!connectedModules[i]->getPuzzlePlaced()) continue;
+        if (connectedModules[i]->getModuleID() == excludedHornID) continue;
+        if (connectedModules[i]->getBaseInfo().heartPiece != isModuleAHorn(connectedModules[i]->getBaseInfo().id)) continue;
+        freeHornIDs.push_back(connectedModules[i]->getModuleID());
+    }
+    return freeHornIDs;
 }

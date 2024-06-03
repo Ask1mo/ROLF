@@ -2,10 +2,7 @@
 
 Comms::Comms()
 {
-  sessionID = (uint8_t)esp_random();
-  Serial.println("Session ID: " + String(sessionID));
-  
-  connect();
+    
 }
 
 void    Comms::reboot(String message)
@@ -18,6 +15,8 @@ void    Comms::reboot(String message)
 void    Comms::transmit(String message, String clientIP)
 {
   Serial.print(F("UDP TRANSMIT: "));
+  Serial.print(clientIP);
+  Serial.print(F(" - "));
   Serial.println(message);
   udp.beginPacket(clientIP.c_str(), SERVER_UDPPORT);
   udp.write((uint8_t *)message.c_str(), message.length());
@@ -31,8 +30,7 @@ void    Comms::receiveAndParse()
     char incomingPacket[255];
     int len = udp.read(incomingPacket, 255);
     if (len > 0) incomingPacket[len] = 0;
-    String remoteIp = udp.remoteIP().toString();
-    //Serial.printf("UDP RECEIVED:  %s\n", incomingPacket);
+    
 
     //Message handling
     String message = String(incomingPacket);
@@ -50,7 +48,14 @@ void    Comms::receiveAndParse()
     {
       NewClientInfo newClientInfo;
       newClientInfo.macAdress = message.substring(5, 22);
+      newClientInfo.ipAdress = udp.remoteIP().toString();
       newClientInfo.templateID = (uint8_t)message[22];
+
+      Serial.print("New client: ");
+      Serial.print(newClientInfo.macAdress);
+      Serial.print(" with templateID: ");
+      Serial.println(newClientInfo.templateID);
+      
 
       newClientBuffer.push_back(newClientInfo);
     }
@@ -66,13 +71,22 @@ void    Comms::receiveAndParse()
       moduleChangeInfo.neighborDirection =  (uint8_t)message[8]; 
 
       moduleChangeBuffer.push_back(moduleChangeInfo);
+    }
 
-      
+    if (message.startsWith(MESSAGE_HOCO_HORNTRIGGERED))
+    {
+      uint8_t moduleID = (uint8_t)message[5];
+
+      Serial.print("Horn ");
+      Serial.print(moduleID);
+      Serial.println(" triggered");
+
+      triggeredHornsIDs.push_back(moduleID);
     }
 
     if (message.startsWith(MESSAGE_DUPL_SESSIONCHECK)) //Session check, respond with current session
     {
-      transmit(MESSAGE_DUPL_SESSIONCHECK + String(sessionID), remoteIp);
+      transmit(MESSAGE_DUPL_SESSIONCHECK + String(sessionID), udp.remoteIP().toString());
     }
     // Add else if conditions here for other codephrases
   }
@@ -133,8 +147,15 @@ std::vector<NewClientInfo> Comms::getNewClientBuffer()
   newClientBuffer.clear();
   return temp;
 }
-
-char Comms::getSessionID()
+std::vector<uint8_t> Comms::getTriggeredHornsIDs()
 {
-  return (char)sessionID;
+  std::vector<uint8_t> temp = triggeredHornsIDs;
+  triggeredHornsIDs.clear();
+  return temp;
+}
+
+void Comms::setSessionID
+(uint8_t sessionID)
+{
+  this->sessionID = sessionID;
 }

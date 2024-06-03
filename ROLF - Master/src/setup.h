@@ -13,8 +13,12 @@
 #define DEBUGLEVEL DEBUG_OPERATIONS
 
 
-#define PRESET_1_DEBUGCROSS 1
-#define PRESET_2_AllCross1 2
+#define PRESET_1_DEBUGCROSS         1
+#define PRESET_2_AllCross1          2
+#define PRESET_3_STRIJP_SINGLEPIPE  3
+#define PRESET_253_STRIJP_HORNWEIRD 253
+#define PRESET_254_STRIJP_HORNLONG  254
+#define PRESET_255_Horn             255
 
 
 

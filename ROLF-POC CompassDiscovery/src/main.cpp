@@ -10,6 +10,18 @@ BaseInfo getBaseInfo(uint8_t presetID)
     case PRESET_2_AllCross1:
       return BaseInfo{PRESET_2_AllCross1,BASE_HEART_XUPDOWN,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR,    1,1*XFACTOR};
     break;
+    
+    case PRESET_3_STRIJP_SINGLEPIPE:
+      return BaseInfo{PRESET_3_STRIJP_SINGLEPIPE,BASE_HEART_X,  1,28,           0,0,            0,0,            0,0,            0,0,            0,0};
+    break;
+    case PRESET_253_STRIJP_HORNWEIRD:
+      return BaseInfo{PRESET_253_STRIJP_HORNWEIRD,BASE_HEART_X, 2,24,           0,0,            0,0,            0,0,            0,0,            0,0};
+    break;
+    case PRESET_254_STRIJP_HORNLONG:
+      return BaseInfo{PRESET_254_STRIJP_HORNLONG,BASE_HEART_X,  2,43,           0,0,            0,0,            0,0,            0,0,            0,0};
+    case PRESET_255_Horn:
+      return BaseInfo{PRESET_255_Horn,0b10000000,    1,1*XFACTOR,    0,0,    0,0,    0,0,    0,0,    0,0};
+    break;
   }
   Serial.println("Preset not found");
   return BaseInfo{0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -19,7 +31,9 @@ void setup()
 {
   Serial.begin(BAUDRATE_MONITOR);
   Serial.println(F("---===Setup started===---"));
+  
 
+  
   xTaskCreatePinnedToCore
   (
     task_main,       /* Task function. */
@@ -56,12 +70,34 @@ void task_main( void *pvParameters ) //Multicore replacement for "loop()"
 
   comms.connect();
   connectorManager = new ConnectorManager(comms.getModuleID());
+  commsIsConnected = true;
   Serial.println("Task Main setup complete");
+
+  pinMode(PIN_MICROPHONE, INPUT);
+
+
+  
+
   
   //Loop
   while (1)
   {
+
     
+    if (SELECTEDPRESET == PRESET_255_Horn)
+    {
+      if (millis() - lastHornMillis > 1000)
+      {
+        int val = analogRead(PIN_MICROPHONE);
+        if (val > 4000)
+        {
+          Serial.println(F("HORN TRIGGER"));
+          lastHornMillis = millis();
+          comms.transmit(MESSAGE_HOCO_HORNTRIGGERED);
+        }
+      }
+    }
+
     String updateCode = connectorManager->getUpdateCode();
     if (updateCode != "") comms.transmit(MESSAGE_CLCO_CONNECTIONCHANGED+updateCode);
 
@@ -107,7 +143,27 @@ void task_leds( void *pvParameters ) //Multicore replacement for led printings
   //Loop
   while (1)
   {
+
+
     trinity->tick();
+
+    //Return LEDS to idle animation
+    for (uint8_t i = 0; i < trinity->getPanelAmount(); i++)
+    {
+      if (trinity->getPanelEffectFinished(i))
+      {
+        Serial.print("!!! Panel effect finished: ");
+        Serial.println(i);
+
+        trinity->setPanelBrightness(i, 50, false);
+        for (uint16_t j = 0; j < trinity->getPanelDiodeAmount(i); j++)
+        {
+          trinity->setPanelDiodeVfx(i, j, VFXData{EFFECT_STOCK_PAUSEDBREATHING, COLOUR_CYCLE, (uint16_t)(j*XFACTOR), 1, true});
+        }
+      }
+    }
+
+    if(!commsIsConnected) continue; //If comms is not connected, skip the rest of the loop
 
     //Led updates
     std::vector<LedUpdate> ledUpdates = comms.getLedUpdates();
@@ -139,21 +195,7 @@ void task_leds( void *pvParameters ) //Multicore replacement for led printings
       }
     }
 
-    //Return LEDS to idle animation
-    for (uint8_t i = 0; i < trinity->getPanelAmount(); i++)
-    {
-      if (trinity->getPanelEffectFinished(i))
-      {
-        Serial.print("!!! Panel effect finished: ");
-        Serial.println(i);
-
-        trinity->setPanelBrightness(i, 50, false);
-        for (uint16_t j = 0; j < trinity->getPanelDiodeAmount(i); j++)
-        {
-          trinity->setPanelDiodeVfx(i, j, VFXData{EFFECT_STOCK_PAUSEDBREATHING, COLOUR_CYCLE, (uint16_t)(j*XFACTOR), 1, true});
-        }
-      }
-    }
+    
 
     vTaskDelay(1);
   }

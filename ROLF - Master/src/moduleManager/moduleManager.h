@@ -45,8 +45,7 @@ class ModuleManager
     
     //Module management
     bool    getIsModuleAlreadyKnown(uint8_t moduleID);
-    uint8_t getModuleID_macAdress(String macAdress);
-    uint8_t findModule_ipAdress(String ipAdress);
+    uint8_t getModuleIDfromMacAdress(String macAdress);
     bool    updateModule(uint8_t moduleID, String macAdress, String ipAdress);
     ConnectedModule *getModule(uint8_t moduleID);
     
@@ -65,8 +64,11 @@ class ModuleManager
 
     //Pathfinding
     void tempPathfindingDemo();
+    
     std::vector<XYZ> tracePath(XYZ start, XYZ end);
     bool isMovementAllowed(XYZ current, uint8_t direction);
+
+    bool isModuleAHorn(uint8_t templateID);
 
 
     public:
@@ -75,6 +77,8 @@ class ModuleManager
     uint8_t addNewModule(NewClientInfo newClientInfo);
     void updateModuleConnection(ModuleChangeInfo moduleChangeInfo);
     bool getLedTransmission(String *transmission, String *ipAdress);
+    std::vector<uint8_t> getFreeHornIDs(uint8_t excludedHornID);
+    bool tempPathfindingDemoV2(uint8_t startModuleID, uint8_t endModuleID);
 };
 
 

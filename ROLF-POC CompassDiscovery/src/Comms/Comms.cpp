@@ -22,13 +22,16 @@ void    Comms::transmit(String message)
 }
 void    Comms::receiveAndParse()
 {
+
+  ArduinoOTA.handle(); //OTA
+  //Serial.print(",");
   //Message Receiving
   if (udp.parsePacket())
-  { 
+  {
     char incomingPacket[255];
     int len = udp.read(incomingPacket, 255);
     if (len > 0) incomingPacket[len] = 0;
-    //Serial.printf("UDP RECEIVED:  %s\n", incomingPacket);
+    Serial.printf("UDP RECEIVED:  %s\n", incomingPacket);
 
 
     //Message handling
@@ -110,6 +113,16 @@ void    Comms::connect()
   }
   Serial.println("WiFi Connected");
 
+  //OTA:
+  String mac = WiFi.macAddress();
+  mac.replace(":", ""); // Remove colons from MAC address
+  String hostname = "ESP_" + mac;
+  ArduinoOTA.setHostname(hostname.c_str()); // Set the hostname
+  ArduinoOTA.begin(); // Initialize OTA
+
+  Serial.println("OTA setup complete: ");
+  Serial.println(hostname);
+
 
   udp.begin(SERVER_UDPPORT);
   String identMessage = MESSAGE_CLCO_NEWCLIENTTEMPLATE + WiFi.macAddress() + (char)SELECTEDPRESET;
@@ -119,6 +132,7 @@ void    Comms::connect()
   while (moduleID == 0 || sessionID == 0) 
   {
     if (timeout-- == 0) reboot("Server connection failed. Restarting...");
+    Serial.print(".");
     delay(1);
     receiveAndParse();
   }

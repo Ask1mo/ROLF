@@ -2,6 +2,7 @@
 #define COMMS_H
 
 #include <Arduino.h>
+#include <ArduinoOTA.h>
 #include <vector>
 #include <WiFi.h>
 #include <WiFiUdp.h>
@@ -23,6 +24,7 @@
 #define MESSAGE_COCL_UPDATEREQUEST      "UpReq" //UpReq
 #define MESSAGE_COCL_NEWEFFECT          "NewFX" //NewFX(effectCode)
 #define MESSAGE_DUPL_SESSIONCHECK       "SeChk" //SeChk(sessionID)
+#define MESSAGE_HOCO_HORNTRIGGERED      "HorTr" //HorTr
 
 struct LedUpdate
 {

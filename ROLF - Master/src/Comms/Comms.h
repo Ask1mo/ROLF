@@ -16,6 +16,7 @@
 #define MESSAGE_COCL_UPDATEREQUEST      "UpReq" //UpReq
 #define MESSAGE_COCL_NEWEFFECT          "NewFX" //NewFX(effectCode)
 #define MESSAGE_DUPL_SESSIONCHECK       "SeChk" //SeChk(sessionID)
+#define MESSAGE_HOCO_HORNTRIGGERED      "HorTr" //HorTr
 
  
 
@@ -28,6 +29,7 @@ private:
     uint64_t lastMillis_SessionCheck = 0;
     std::vector<ModuleChangeInfo> moduleChangeBuffer;
     std::vector<NewClientInfo> newClientBuffer;
+    std::vector<uint8_t> triggeredHornsIDs;
     void reboot(String message);
     
     void receiveAndParse();
@@ -39,7 +41,8 @@ public:
     void transmit(String message, String clientIP);
     std::vector<ModuleChangeInfo> getModuleChangeBuffer();
     std::vector<NewClientInfo> getNewClientBuffer();
-    char getSessionID();
+    std::vector<uint8_t> getTriggeredHornsIDs();
+    void setSessionID(uint8_t sessionID);
 };
 
 #endif
