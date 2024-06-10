@@ -84,7 +84,7 @@ void task_main( void *pvParameters ) //Multicore replacement for "loop()"
   {
 
     
-    if (SELECTEDPRESET == PRESET_255_Horn)
+    if (SELECTEDPRESET == PRESET_255_Horn || SELECTEDPRESET == PRESET_254_STRIJP_HORNLONG || SELECTEDPRESET == PRESET_253_STRIJP_HORNWEIRD)
     {
       if (millis() - lastHornMillis > 1000)
       {

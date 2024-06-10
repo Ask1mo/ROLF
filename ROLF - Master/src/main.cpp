@@ -75,6 +75,14 @@ void setup()
   Serial.println("Session ID: " + String(sessionID));
   //No setup needed. Everything is done in constructors
   comms.connect();
+
+  //Transmit session changed message to every module
+  for (int i = 0; i < 255; i++)
+  {
+    if (i == 10) comms.transmit(MESSAGE_DUPL_SESSIONCHECK + String(sessionID), "192.168.137.00" + String(i));
+    else if (i < 100) comms.transmit(MESSAGE_DUPL_SESSIONCHECK + String(sessionID), "192.168.137.0" + String(i));
+    else comms.transmit(MESSAGE_DUPL_SESSIONCHECK + String(sessionID), "192.168.137." + String(i));
+  }
   Serial.println(F("---===Setup finished===---"));  
 }
 void loop()

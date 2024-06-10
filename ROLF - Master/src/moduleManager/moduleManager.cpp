@@ -726,64 +726,75 @@ void ModuleManager::tempPathfindingDemo()
         Serial.print(path[i].y);
         Serial.println(")");
     }
+    Serial.println("End path");
 
 
 
 
     //If a path has been found
-    if (path.size() > 0)
+    if (path.size() == 0) return;
+    
+    //Get the module ID's of the path
+    std::vector<uint8_t> pathModuleIDs;
+    std::vector<ModuleLedInfo_Output> pipeInstructions;
+    for (uint8_t i = 0; i < path.size(); i++)
     {
-        //Get the module ID's of the path
-        std::vector<uint8_t> pathModuleIDs;
-        std::vector<ModuleLedInfo_Output> pipeInstructions;
-        for (uint8_t i = 0; i < path.size(); i++)
+        uint8_t colour =  (uint8_t)random(1, 7);
+        //Check if the ID hasnt been added yet
+        for (uint8_t j = 0; j < pathModuleIDs.size(); j++)
         {
-            uint8_t colour =  (uint8_t)random(1, 7);
-            //Check if the ID hasnt been added yet
-            for (uint8_t j = 0; j < pathModuleIDs.size(); j++)
+            if (pathModuleIDs[j] == puzzlePieces[path[i].x][path[i].y].parentModule->getModuleID())
             {
-                if (pathModuleIDs[j] == puzzlePieces[path[i].x][path[i].y].parentModule->getModuleID())
-                {
-                    pathModuleIDs.push_back(puzzlePieces[path[i].x][path[i].y].parentModule->getModuleID());
-                } 
+                pathModuleIDs.push_back(puzzlePieces[path[i].x][path[i].y].parentModule->getModuleID());
+            } 
+        }
+        
+        //Check if current module is a heart piece
+        if (puzzlePieces[path[i].x][path[i].y].pieceType == PUZZLEPIECE_TYPE_HEART)
+        {
+            //Get module
+            ConnectedModule *currentModule = puzzlePieces[path[i].x][path[i].y].parentModule;
+            //Get directions of previous and next pipe
+            uint8_t previousPipeDirection = 0;
+            uint8_t nextPipeDirection = 0;
+            if (i > 0) //(To prevent out of bounds)
+            {
+                if (path[i-1].x == path[i].x - 1) previousPipeDirection = DIRECTION_NORTH;
+                if (path[i-1].y == path[i].y + 1) previousPipeDirection = DIRECTION_EAST;
+                if (path[i-1].x == path[i].x + 1) previousPipeDirection = DIRECTION_SOUTH;
+                if (path[i-1].y == path[i].y - 1) previousPipeDirection = DIRECTION_WEST;
+            }
+            if (i < path.size() - 1) //(To prevent out of bounds)
+            {
+                if (path[i+1].x == path[i].x - 1) nextPipeDirection = DIRECTION_NORTH;
+                if (path[i+1].y == path[i].y + 1) nextPipeDirection = DIRECTION_EAST;
+                if (path[i+1].x == path[i].x + 1) nextPipeDirection = DIRECTION_SOUTH;
+                if (path[i+1].y == path[i].y - 1) nextPipeDirection = DIRECTION_WEST;
             }
             
-            //Check if current module is a heart piece
-            if (puzzlePieces[path[i].x][path[i].y].pieceType == PUZZLEPIECE_TYPE_HEART)
+            uint16_t newDelay;
+            if  (path.size() > 1
             {
-                //Get module
-                ConnectedModule *currentModule = puzzlePieces[path[i].x][path[i].y].parentModule;
-                //Get directions of previous and next pipe
-                uint8_t previousPipeDirection = 0;
-                uint8_t nextPipeDirection = 0;
-                if (i > 0) //(To prevent out of bounds)
-                {
-                    if (path[i-1].x == path[i].x - 1) previousPipeDirection = DIRECTION_NORTH;
-                    if (path[i-1].y == path[i].y + 1) previousPipeDirection = DIRECTION_EAST;
-                    if (path[i-1].x == path[i].x + 1) previousPipeDirection = DIRECTION_SOUTH;
-                    if (path[i-1].y == path[i].y - 1) previousPipeDirection = DIRECTION_WEST;
+                if (!pipeInstructions.empty()) {
+                    newDelay = pipeInstructions.back().delayOffset + pipeInstructions.back().delayMine;
+                } else {
+                    // Handle the case where pipeInstructions is empty, if necessary
                 }
-                if (i < path.size() - 1) //(To prevent out of bounds)
-                {
-                    if (path[i+1].x == path[i].x - 1) nextPipeDirection = DIRECTION_NORTH;
-                    if (path[i+1].y == path[i].y + 1) nextPipeDirection = DIRECTION_EAST;
-                    if (path[i+1].x == path[i].x + 1) nextPipeDirection = DIRECTION_SOUTH;
-                    if (path[i+1].y == path[i].y - 1) nextPipeDirection = DIRECTION_WEST;
-                }
-                
-                uint16_t newDelay;
-                if  (path.size() > 1) newDelay = pipeInstructions[path.size()].delayOffset + pipeInstructions[path.size()].delayMine;                    
-                else newDelay = 0;
-                
-                uint16_t ownDelay = currentModule->getPipeDelayFromCompensatedDirection(previousPipeDirection);
-                ownDelay = currentModule->getPipeDelayFromCompensatedDirection(nextPipeDirection);
-                
-                
-                ModuleLedInfo_Output pipeInstruction = ModuleLedInfo_Output{currentModule->getModuleID(), previousPipeDirection, nextPipeDirection, colour, newDelay, ownDelay};
-                bufferedTransmissions.push_back(pipeInstruction);
             }
-        }  
+            else
+            {
+                newDelay = 0;
+            }
+            
+            uint16_t ownDelay = currentModule->getPipeDelayFromCompensatedDirection(previousPipeDirection);
+            ownDelay = currentModule->getPipeDelayFromCompensatedDirection(nextPipeDirection);
+            
+            
+            ModuleLedInfo_Output pipeInstruction = ModuleLedInfo_Output{currentModule->getModuleID(), previousPipeDirection, nextPipeDirection, colour, newDelay, ownDelay};
+            bufferedTransmissions.push_back(pipeInstruction);
+        }
     }
+    return;
 }
 bool ModuleManager::tempPathfindingDemoV2(uint8_t startModuleID, uint8_t endModuleID)
 {
@@ -1097,14 +1108,14 @@ void ModuleManager::tick()
     }
 
 
-    /*
+    
     //Temp pathfinding demo every INTERVAL_PATHFINDDEMO
     if (currentMillis - lastMillis_PathFindDemo > INTERVAL_PATHFINDDEMO)
     {
         lastMillis_PathFindDemo = currentMillis;
         tempPathfindingDemo();
     }
-    */
+    
 
     
     //Check if the board is empty, if so, place the first puzzle piece in the middle

@@ -14,6 +14,7 @@ void    Comms::reboot(String message)
 
 void    Comms::transmit(String message, String clientIP)
 {
+  if (clientIP == "192.168.137.112") return; //Ignore myself
   Serial.print(F("UDP TRANSMIT: "));
   Serial.print(clientIP);
   Serial.print(F(" - "));
