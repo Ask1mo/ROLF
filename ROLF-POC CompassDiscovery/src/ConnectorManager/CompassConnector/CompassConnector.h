@@ -34,6 +34,20 @@
 #define INTERVAL_SYNCPULSE_MAXABSENCE 10000 // 10 seconds
 
 
+#define TRANSMISSIONTYPE_BUSY           'B'
+#define TRANSMISSIONTYPE_PINTEST        'P'
+#define TRANSMISSIONTYPE_MESSAGE        'M'
+
+struct Transmission
+{
+    bool isIdentMessage;      //True if the message is an ident message, ident messages assign the moduleID to the module. If true goalID will be 255 in which case the MAC adress in the message will have to be parsed to kinda get the goal module (Instead of goalID)
+    uint8_t goalID;         //0 for master, 255 for unknown module (broadcast)
+    uint8_t senderID;       //0 for master, 255 for unknown module (broadcast).     Sender ID will be the last digit of the macAdress of the sender if IdentMessage is true. To avoid message being lost.
+    uint8_t connectorID;    //Directional Pin/port on which this message was received
+    uint64_t messageID;
+    String message;
+};
+
 class CompassConnector
 {
     private:
@@ -48,21 +62,22 @@ class CompassConnector
     bool serialMode;
     std::vector<String> updateCodes;
     uint64_t lastMillis_SyncPulse;
-
-    //SoftwareSerial* softwareSerialTransmit;
-    //SoftwareSerial* softwareSerialReceive;
-
+    bool neighborIsBusy = false;
+    void (*lockSystemOccupied)();
+    void (*releaseSystemOccupied)();
     EspSoftwareSerial::UART *softwareSerial;
+    std::vector<Transmission> transmissions;
 
     void claimLine(bool enabled); //High to pull the line down and claim it.
-    bool checkLineClaimed();
+    
 
     void prepareSerial_Read();
     void prepareSerial_Write();
     void transmit();
     bool readData(uint8_t *newNeighborAdress, uint8_t *newNeighborDirection);
-    uint8_t waitAndRead();
-    String directionToString(uint8_t compassDirection);
+    uint8_t waitAndRead(bool *timedOut, uint16_t timeoutMillis);
+    void transmitAck();
+    
 
     void saveNeighborData(uint8_t newNeighborAdress, uint8_t newNeighborDirection);
 
@@ -71,6 +86,10 @@ class CompassConnector
     public:
     CompassConnector(uint8_t pin_ident, uint8_t pin_sync, uint8_t direction, uint8_t *moduleAdress);
     void tick();
+    
+    void handlePinTest();
+    Transmission handleMessageRead();
+
     void sendPulse_Ident();
     void sendPulse_Sync();
     String getUpdateCode();
@@ -78,8 +97,12 @@ class CompassConnector
     void forgetNeighbor();
     uint64_t getLastPulseTime();
     uint8_t getNeighborAdress();
-    
+    uint8_t checkLineClaimed();
+    uint8_t getDirection();
+    void queueTransmission(Transmission transmission);
 };
+
+String directionToString(uint8_t compassDirection);
 
 
 

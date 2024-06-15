@@ -27,10 +27,26 @@ BaseInfo getBaseInfo(uint8_t presetID)
   return BaseInfo{0,0,0,0,0,0,0,0,0,0,0,0,0};
 }
 
+
 void setup()
 {
   Serial.begin(BAUDRATE_MONITOR);
   Serial.println(F("---===Setup started===---"));
+
+  //Wifi
+  WiFi.begin(WIFI_SSID, PASSWORD);
+  Serial.print("Attempting connection to ");
+  Serial.println(WIFI_SSID);
+
+  //OTA
+  String mac = WiFi.macAddress();
+  mac.replace(":", ""); // Remove colons from MAC address
+  String hostname = "ESP_" + mac;
+  ArduinoOTA.setHostname(hostname.c_str()); // Set the hostname
+  ArduinoOTA.begin(); // Initialize OTA
+
+  Serial.println("OTA hostname: ");
+  Serial.println(hostname);
   
 
   

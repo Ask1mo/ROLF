@@ -1,0 +1,37 @@
+Task:       Persistence of connection
+Current:    Every time you speak in a horn the connection will be random to a random horn.
+Goal:       We want people to stay connected as long as they keep talking to each other.
+Fix:        Implement a system to keep horns connected to each other. The path tracing can/must still be random every time. But keep the Origin/Goal horn the same as long as they keep talking.
+
+Task:       Horn colour matching
+Problem:    Colours coming from horns is randomised
+Fix:        Implement system so that specific horns will always have line patters coming from them with the horn's corresponding colour.
+Example:    Soundwaves coming from the "Red" horn must always have a red colour.
+Why:        Team decided it. I think it's fine. put this low on your list lol. Or at least implement it together with a "Horn colour assignment" idea
+
+Task        Horn colour assignment
+Idea:       Assign colours to horns. Every once in a while. 30-120s. Reassign the colours of all horns. Fits together with the "Persistence of connection" task
+
+
+
+Task:       Removing network code
+Problem:    Wifi code not reliable with system setups with many modules connected to it. (especially if system may require +/-150 modules)
+Current:    Clients send udp commands to master over Wifi and vice versa. Currently using windows 11 hotspot as wifi network.
+origin:     Needed a quick reliable system to implement transmissions to and from modules.
+Fix:        Implement UART passtrough network. Transmissions will be passed from one module to the next to create a wired uart network.
+            Must also implement system to not retransmit messages that were already transmitted.
+Why fix:    I2C voltage drops unreliable. CAN bus not possible due to hardware limitations & budget.
+
+Task:       Fixing Module identification system
+Problem:    This system may not work with the uart pass-around system. If clients are not aware of master's changed connection, it may cause multiple clients to take on the same moduleID.
+Origin:     Wifi system used a "Session check" ensure stabilty if master rebooted. Clients occasionally send out a "SessionCheck pulse" to the IP adress of the master. It returns the current session to the client. 
+Problem2:   In the non-wifi system modules come online without an assigned moduleID. They have to ask for one from the master. But with this new system that will happen through the neighbor network.
+            This network only functions when everyone has ID's. It's a chicken and egg problem. Can't have moduleID without consulting the network. Can't connect to the network without ModuleID.
+Origin2:    When modules are first activated/connected they ask the master for a moduleID via Wifi. Only after they receive it will they start talking to their neigbors.
+            This is because neigbours need to know what the ID of their neighbor is.
+Fix:        Entire moduleID system to identify modules will have to be replaced with MAC adresses. or another form of static hardware-based identification.
+
+
+Task:       Audio triggering
+Problem:    We need a way to know when someone is speaking into a horn.
+Pre-work:   Tried to get FFT code working. Arduino seems to be too slow. Didn't really know how to do this without involving hand-calibrated sensors. Was time pressed to finish other code.

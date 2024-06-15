@@ -1,6 +1,6 @@
 #include "ConnectorManager.h"
 
-ConnectorManager::ConnectorManager(uint8_t *moduleAdress)
+ConnectorManager::ConnectorManager(String macAdress)
 {
     if(DEBUGLEVEL >= DEBUG_OPERATIONS)
     {
@@ -9,13 +9,28 @@ ConnectorManager::ConnectorManager(uint8_t *moduleAdress)
     }
 
     this->compassConnectors = new CompassConnector*[DIRECTIONS];
-    this->compassConnectors[0] = new CompassConnector(PIN_IDENT_NORTH,  PIN_SYNC_NORTH,   DIRECTION_NORTH,    moduleAdress);
-    this->compassConnectors[1] = new CompassConnector(PIN_IDENT_EAST,   PIN_SYNC_EAST,    DIRECTION_EAST,     moduleAdress);
-    this->compassConnectors[2] = new CompassConnector(PIN_IDENT_SOUTH,  PIN_SYNC_SOUTH,   DIRECTION_SOUTH,    moduleAdress);
-    this->compassConnectors[3] = new CompassConnector(PIN_IDENT_WEST,   PIN_SYNC_WEST,    DIRECTION_WEST,     moduleAdress);
-    this->compassConnectors[4] = new CompassConnector(PIN_IDENT_UP,     PIN_SYNC_UP,      DIRECTION_UP,       moduleAdress);
-    this->compassConnectors[5] = new CompassConnector(PIN_IDENT_DOWN,   PIN_SYNC_DOWN,    DIRECTION_DOWN,     moduleAdress);
+    this->compassConnectors[0] = new CompassConnector(PIN_IDENT_NORTH,  PIN_SYNC_NORTH,   DIRECTION_NORTH,    &moduleID);
+    this->compassConnectors[1] = new CompassConnector(PIN_IDENT_EAST,   PIN_SYNC_EAST,    DIRECTION_EAST,     &moduleID);
+    this->compassConnectors[2] = new CompassConnector(PIN_IDENT_SOUTH,  PIN_SYNC_SOUTH,   DIRECTION_SOUTH,    &moduleID);
+    this->compassConnectors[3] = new CompassConnector(PIN_IDENT_WEST,   PIN_SYNC_WEST,    DIRECTION_WEST,     &moduleID);
+    this->compassConnectors[4] = new CompassConnector(PIN_IDENT_UP,     PIN_SYNC_UP,      DIRECTION_UP,       &moduleID);
+    this->compassConnectors[5] = new CompassConnector(PIN_IDENT_DOWN,   PIN_SYNC_DOWN,    DIRECTION_DOWN,     &moduleID);
     directionsTurn = 0;
+
+    //ToDo: This moduleID hunt should be replaced with macadresses.
+    String identMessage = MESSAGE_CLCO_NEWCLIENTTEMPLATE + macAdress + (char)SELECTEDPRESET;
+    lastMessageID++;
+    transmit(Transmission{true, ADRESS_MASTER, ADRESS_UNKNOWN, DIRECTION_NONE, lastMessageID, identMessage});
+
+    uint16_t timeout = 10000;
+    while (moduleID == 0 || sessionID == 0) 
+    {
+        if (timeout-- == 0) reboot("Server connection failed. Restarting...");
+        Serial.print(".");
+        delay(1);
+        receiveAndParse();
+    }
+    Serial.println("Server Connected");
 }
 
 void ConnectorManager::tick()
@@ -35,6 +50,48 @@ void ConnectorManager::tick()
     for (int i = 0; i < DIRECTIONS;  i++)
     {
         compassConnectors[i]->tick();
+
+        uint8_t newTransmissionType = compassConnectors[i]->checkLineClaimed();
+        if (newTransmissionType != 0)
+        {
+
+            switch (newTransmissionType)
+            {
+                case TRANSMISSIONTYPE_BUSY:
+                    //The connector class already notes down itself as busy, so no need to do anything here
+                break;
+
+                case TRANSMISSIONTYPE_PINTEST:
+                {
+                    //lockSystemOccupied();
+                    compassConnectors[i]->handlePinTest();
+                }   
+                break;
+
+                case TRANSMISSIONTYPE_MESSAGE:
+                {
+                    //lockSystemOccupied();
+                    Transmission incomingTransmission = compassConnectors[i]->handleMessageRead();
+                    if (incomingTransmission.isIdentMessage) //If the message is an ident message it contains no GoalID. So we have to manually match the MAC adress in the message of the transmission.
+                    {
+
+                    }
+                    else
+                    {
+
+                    }
+                }
+                break;
+
+                default:
+                {
+                    Serial.print(F("Unknown transmission type detected on pin: "));
+                    Serial.print(directionToString(compassConnectors[i]->getDirection()));
+                    Serial.println(newTransmissionType);
+                }
+                break;
+            }
+        }
 
         //Make sure no duplicates connections have been made
         for (int j = 0; j < DIRECTIONS; j++)
@@ -84,4 +141,97 @@ void ConnectorManager::printConnectors()
         compassConnectors[i]->printConnector();
     }
     Serial.println();
+}
+
+void ConnectorManager::lockSystemOccupied()
+{
+
+}
+void ConnectorManager::releaseSystemOccupied()
+{
+
+}
+
+void ConnectorManager::setConnectorsToBusy(uint8_t directionToIgnore)
+{
+    for (int i = 0; i < DIRECTIONS; i++)
+    {
+        if (i+1 != directionToIgnore) compassConnectors[i]->transmitBusy(true);
+    }
+}
+void ConnectorManager::setConnectorsToFree()
+{
+
+}
+void ConnectorManager::parseTransmission(String message)
+{
+    Serial.print("Parsing message: ");
+    Serial.println(message);
+
+    if (message.startsWith(MESSAGE_COCL_IDASSIGNMENT))//Message contains 2 bytes: moduleAdress and sessionID
+    {
+      moduleID = (uint8_t)message.substring(strlen(MESSAGE_COCL_IDASSIGNMENT), strlen(MESSAGE_COCL_IDASSIGNMENT)+1).toInt();
+      sessionID = (uint8_t)message.substring(strlen(MESSAGE_COCL_IDASSIGNMENT)+1).toInt();
+      Serial.print("ModuleID: ");
+      Serial.println(moduleID);
+      Serial.print("Session ID: ");
+      Serial.println(sessionID);
+
+    }
+  
+    if (message.startsWith(MESSAGE_COCL_UPDATEREQUEST))
+    {
+      Serial.println("Update requested, not implemented");
+    }
+
+    if (message.startsWith(MESSAGE_COCL_NEWEFFECT))
+    {
+      uint8_t inputDirection = (uint8_t)message[5];
+      uint8_t outputDirection = (uint8_t)message[6];
+      uint8_t color = (uint8_t)message[7];
+      uint16_t delayOffset = ((uint8_t)message[8] << 8) | (uint8_t)message[9];
+
+      LedUpdate newLedUpdate = LedUpdate{inputDirection, outputDirection, color, delayOffset};
+
+      ledUpdates_buffer.push_back(newLedUpdate);
+
+      Serial.print("New effect received. Input Direction: ");
+      Serial.print(inputDirection);
+      Serial.print(", Output Direction: ");
+      Serial.print(outputDirection);
+      Serial.print(", Color: ");
+      Serial.print(color);
+      Serial.print(", Delay Offset: ");
+      Serial.println(delayOffset);
+
+      
+      
+    }
+
+    if (message.startsWith(MESSAGE_DUPL_SESSIONCHECK))
+    {
+      uint8_t newSessionID = (uint8_t)message.substring(strlen(MESSAGE_DUPL_SESSIONCHECK)).toInt();
+      Serial.print("Parsed session: ");
+      Serial.println(newSessionID);
+
+      if (sessionID == 0) sessionID = newSessionID;
+      else if (sessionID != newSessionID) reboot("Session changed. Restarting...");
+    }
+  }
+}
+
+void ConnectionManager::transmit(Transmission transmission)
+{
+    for (uint8_t i = 0; i < DIRECTIONS; i++)
+    {
+        if (transmission.connectorID == compassConnectors[i]->getDirection()) continue; //You don't want to retransmit the message to the connector from which you received it
+        compassConnectors[i]->queueTransmission(transmission);
+    }
+}
+
+void    ConnectionManager::reboot(String message)
+{
+  Serial.print(F("MANUAL REBOOT: "));
+  Serial.println(message);
+  ESP.restart();
 }
