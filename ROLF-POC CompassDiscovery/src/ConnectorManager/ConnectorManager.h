@@ -30,9 +30,12 @@ class ConnectorManager
     uint8_t sessionID = 0;
     uint8_t lastMessageID = 0;
 
+    std::vector<LedUpdate> ledUpdates_buffer; //Quick dump so incoming transmissions are always stored
+
     void setConnectorsToBusy(uint8_t directionToIgnore);
     void setConnectorsToFree();
     void reboot(String message);//Odd place to have this here.
+    void retransmit(Transmission transmission);
 
     
 
@@ -50,7 +53,8 @@ class ConnectorManager
     void lockSystemOccupied();
     void releaseSystemOccupied();
     void parseTransmission(String message);
-    void transmit(Transmission transmission); 
+    void transmit(String messageType, String message = ""); 
+    std::vector<LedUpdate> getLedUpdates();
 };
 
 

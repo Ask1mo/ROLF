@@ -20,7 +20,7 @@ ConnectorManager::ConnectorManager(String macAdress)
 
     String identMessage = macAdress + (char)SELECTEDPRESET;
     lastMessageID++;
-    transmit(Transmission{"MASTER", lastMessageID, MESSAGETYPE_CLCO_NEWCLIENTTEMPLATE, identMessage, DIRECTION_NONE});
+    retransmit(Transmission{"MASTER", lastMessageID, MESSAGETYPE_CLCO_NEWCLIENTTEMPLATE, identMessage, DIRECTION_NONE});
 }
 
 void ConnectorManager::tick()
@@ -63,7 +63,7 @@ void ConnectorManager::tick()
                     //lockSystemOccupied();
                     Transmission incomingTransmission = compassConnectors[i]->handleMessageRead();
                     if (incomingTransmission.goalMac == macAdress) parseTransmission(incomingTransmission.message);
-                    else transmit(incomingTransmission); //Double retransmit prevention in this function
+                    else retransmit(incomingTransmission); //Double retransmit prevention in this function
                 }
                 break;
 
@@ -155,7 +155,7 @@ void ConnectorManager::parseTransmission(String message)
     if (message.startsWith(MESSAGETYPE_COCL_REQUESTTEMPLATE))
     {
         lastMessageID++;
-        transmit(Transmission{"MASTER", lastMessageID, MESSAGETYPE_CLCO_NEWCLIENTTEMPLATE, macAdress + (char)SELECTEDPRESET, DIRECTION_NONE});
+        retransmit(Transmission{"MASTER", lastMessageID, MESSAGETYPE_CLCO_NEWCLIENTTEMPLATE, macAdress + (char)SELECTEDPRESET, DIRECTION_NONE});
     }
 
     if (message.startsWith(MESSAGETYPE_COCL_UPDATEREQUEST))
@@ -185,7 +185,7 @@ void ConnectorManager::parseTransmission(String message)
     }
 }
 
-void ConnectorManager::transmit(Transmission transmission)
+void ConnectorManager::retransmit(Transmission transmission) //Retransmit is a bad name for this func.
 {
     for (uint8_t i = 0; i < DIRECTIONS; i++)
     {
@@ -193,10 +193,22 @@ void ConnectorManager::transmit(Transmission transmission)
         compassConnectors[i]->queueTransmission(transmission);
     }
 }
+void ConnectorManager::transmit(String messageType, String message)
+{
+    lastMessageID++;
+    retransmit(Transmission{"MASTER", lastMessageID, messageType, message, DIRECTION_NONE});
+}
 
 void    ConnectorManager::reboot(String message)
 {
   Serial.print(F("MANUAL REBOOT: "));
   Serial.println(message);
   ESP.restart();
+}
+
+std::vector<LedUpdate> ConnectorManager::getLedUpdates()
+{
+  std::vector<LedUpdate> ledUpdatesToReturn = ledUpdates_buffer;
+  ledUpdates_buffer.clear();
+  return ledUpdatesToReturn;
 }

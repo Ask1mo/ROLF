@@ -31,24 +31,7 @@ BaseInfo getBaseInfo(uint8_t presetID)
 void setup()
 {
   Serial.begin(BAUDRATE_MONITOR);
-  Serial.println(F("---===Setup started===---"));
-
-  //Wifi
-  WiFi.begin(WIFI_SSID, PASSWORD);
-  Serial.print("Attempting connection to ");
-  Serial.println(WIFI_SSID);
-
-  //OTA
-  String mac = WiFi.macAddress();
-  mac.replace(":", ""); // Remove colons from MAC address
-  String hostname = "ESP_" + mac;
-  ArduinoOTA.setHostname(hostname.c_str()); // Set the hostname
-  ArduinoOTA.begin(); // Initialize OTA
-
-  Serial.println("OTA hostname: ");
-  Serial.println(hostname);
-  
-
+  Serial.println(F("----- ===== Setup started ===== -----"));
   
   xTaskCreatePinnedToCore
   (
@@ -72,34 +55,47 @@ void setup()
     1               /* pin task to core 1 */
   ); 
 
-
-  Serial.println(F("---===Setup finished===---"));
+  Serial.println(F("----- ===== Setup finished ===== -----"));
 }
 void loop() //Not used, use task_main and task_leds instead
 {
-  
+  Serial.println("If you reach this code: You're fucked :D");
 }
 void task_main( void *pvParameters ) //Multicore replacement for "loop()"
 {
   //Setup
-  Serial.println("Task Main started");
+  Serial.println("----- ===== Task Main Setup Started ===== -----");
 
-  comms.connect();
-  connectorManager = new ConnectorManager(comms.getModuleID());
-  commsIsConnected = true;
-  Serial.println("Task Main setup complete");
-
+  //Horn microphone //TODO: REMOVE OR REPLACE
   pinMode(PIN_MICROPHONE, INPUT);
 
+  //Wifi
+  WiFi.begin(WIFI_SSID, PASSWORD);
+  Serial.print("Attempting connection to ");
+  Serial.println(WIFI_SSID);
 
-  
+  //OTA
+  String mac = WiFi.macAddress();
+  mac.replace(":", ""); // Remove colons from MAC address
+  String hostname = "ESP_" + mac;
+  ArduinoOTA.setHostname(hostname.c_str()); // Set the hostname
+  ArduinoOTA.begin(); // Initialize OTA
+  Serial.println("OTA hostname: ");
+  Serial.println(hostname);
 
+  //Comms
+  connectorManager = new ConnectorManager(WiFi.macAddress());
+
+  //Setup end
+  Serial.println("----- ===== Task Main Setup Complete ===== -----");
   
   //Loop
   while (1)
   {
+    //OTA
+    ArduinoOTA.handle();
 
-    
+    //Horn microphone //TODO: REMOVE OR REPLACE
     if (SELECTEDPRESET == PRESET_255_Horn || SELECTEDPRESET == PRESET_254_STRIJP_HORNLONG || SELECTEDPRESET == PRESET_253_STRIJP_HORNWEIRD)
     {
       if (millis() - lastHornMillis > 1000)
@@ -109,17 +105,28 @@ void task_main( void *pvParameters ) //Multicore replacement for "loop()"
         {
           Serial.println(F("HORN TRIGGER"));
           lastHornMillis = millis();
-          comms.transmit(MESSAGE_HOCO_HORNTRIGGERED);
+          connectorManager->transmit(MESSAGETYPE_HOCO_HORNTRIGGERED);
         }
       }
     }
 
-    String updateCode = connectorManager->getUpdateCode();
-    if (updateCode != "") comms.transmit(MESSAGE_CLCO_CONNECTIONCHANGED+updateCode);
+    //Getting led updates from comms into shared memory
+    if (!memoryReserved) //If memory is not reserved by task_leds
+    {
+      memoryReserved = true;
+      std::vector<LedUpdate> newLedUpdates = connectorManager->getLedUpdates();
+      for (uint8_t i = 0; i < newLedUpdates.size(); i++)
+      {
+        ledUpdates_Shared.push_back(newLedUpdates[i]);
+      }
+      memoryReserved = false;
+    }
 
+    //Detecing pin changes and sending them to the master
+    String updateCode = connectorManager->getUpdateCode();
+    if (updateCode != "") connectorManager->transmit(MESSAGETYPE_CLCO_CONNECTIONCHANGED, updateCode);
     connectorManager->tick();
-    comms.tick();
-    
+
     vTaskDelay(1);
   }
 }
@@ -159,8 +166,6 @@ void task_leds( void *pvParameters ) //Multicore replacement for led printings
   //Loop
   while (1)
   {
-
-
     trinity->tick();
 
     //Return LEDS to idle animation
@@ -179,36 +184,39 @@ void task_leds( void *pvParameters ) //Multicore replacement for led printings
       }
     }
 
-    if(!commsIsConnected) continue; //If comms is not connected, skip the rest of the loop
 
     //Led updates
-    std::vector<LedUpdate> ledUpdates = comms.getLedUpdates();
-    if(ledUpdates.size() > 0)
+    if (!memoryReserved)
     {
-      for (uint8_t i = 0; i < ledUpdates.size(); i++)
+      memoryReserved = true;
+      if(ledUpdates_Shared.size() > 0)
       {
-        uint8_t inputDirection = ledUpdates[i].inputPanel;
-        uint8_t outputDirection = ledUpdates[i].outputPanel;
-        uint8_t color = ledUpdates[i].colour;
-        uint16_t delayOffset = ledUpdates[i].offset;
-
-        ledUpdates.erase(ledUpdates.begin() + i);
-
-        uint16_t inputDelay = delayOffset + trinity->getPanelDiodeAmount(inputDirection);
-        trinity->setPanelBrightness(inputDirection, 255, false);
-        for (uint16_t j = 0; j < trinity->getPanelDiodeAmount(inputDirection); j++)
+        for (uint8_t i = 0; i < ledUpdates_Shared.size(); i++)
         {
-          trinity->setPanelDiodeVfx(inputDirection, j, VFXData{EFFECT_STOCK_FLASH, color, inputDelay, 1, false});
-          inputDelay-= XFACTOR;
-        }
-        uint16_t outputDelay = delayOffset + trinity->getPanelDiodeAmount(inputDirection);
-        trinity->setPanelBrightness(outputDirection, 255, false);
-        for (uint16_t j = 0; j < trinity->getPanelDiodeAmount(outputDirection); j++)
-        {
-          trinity->setPanelDiodeVfx(outputDirection, j, VFXData{EFFECT_STOCK_FLASH, color, outputDelay, 1, false});
-          outputDelay+= XFACTOR;
+          uint8_t inputDirection = ledUpdates_Shared[0].inputPanel;
+          uint8_t outputDirection = ledUpdates_Shared[0].outputPanel;
+          uint8_t color = ledUpdates_Shared[0].colour;
+          uint16_t delayOffset = ledUpdates_Shared[0].offset;
+
+          ledUpdates_Shared.erase(ledUpdates_Shared.begin());
+
+          uint16_t inputDelay = delayOffset + trinity->getPanelDiodeAmount(inputDirection);
+          trinity->setPanelBrightness(inputDirection, 255, false);
+          for (uint16_t j = 0; j < trinity->getPanelDiodeAmount(inputDirection); j++)
+          {
+            trinity->setPanelDiodeVfx(inputDirection, j, VFXData{EFFECT_STOCK_FLASH, color, inputDelay, 1, false});
+            inputDelay-= XFACTOR;
+          }
+          uint16_t outputDelay = delayOffset + trinity->getPanelDiodeAmount(inputDirection);
+          trinity->setPanelBrightness(outputDirection, 255, false);
+          for (uint16_t j = 0; j < trinity->getPanelDiodeAmount(outputDirection); j++)
+          {
+            trinity->setPanelDiodeVfx(outputDirection, j, VFXData{EFFECT_STOCK_FLASH, color, outputDelay, 1, false});
+            outputDelay+= XFACTOR;
+          }
         }
       }
+      memoryReserved = false;
     }
 
     

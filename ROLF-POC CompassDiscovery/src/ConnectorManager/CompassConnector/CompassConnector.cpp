@@ -96,7 +96,8 @@ void CompassConnector::prepareSerial_Write()
 void CompassConnector::transmit()
 {
     prepareSerial_Write();
-    softwareSerial->write(macAdress);
+    const char* macAdressCString = this->macAdress.c_str();
+    softwareSerial->write(macAdressCString);
     delay(PULSELENGTH_SYNC);
     softwareSerial->write(direction);
     claimLine(false); //To make sure the data line returns to HIGH, release it.
@@ -347,4 +348,9 @@ void CompassConnector::transmit_busy()
     prepareSerial_Write();
     softwareSerial->write('B');
     claimLine(false);
+}
+
+void CompassConnector::queueTransmission(Transmission transmission)
+{
+    transmissions.push_back(transmission);
 }
