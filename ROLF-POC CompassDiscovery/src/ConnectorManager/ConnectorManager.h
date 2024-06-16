@@ -7,13 +7,14 @@
 
 #define INTERVAL_SYNCPULSE 1000             // 1 second
 
-#define MESSAGE_CLCO_NEWCLIENTTEMPLATE  "NwClT" //NwClT (macAdress)(TemplateID)
-#define MESSAGE_COCL_IDASSIGNMENT       "IDAss" //IDAss (macAdress)(moduleAdress)(sessionID)
-#define MESSAGE_CLCO_CONNECTIONCHANGED  "ConCh" //ConCh (updateCode)
-#define MESSAGE_COCL_UPDATEREQUEST      "UpReq" //UpReq 
-#define MESSAGE_COCL_NEWEFFECT          "NewFX" //NewFX (effectCode)
-#define MESSAGE_DUPL_SESSIONCHECK       "SeChk" //SeChk (sessionID)
-#define MESSAGE_HOCO_HORNTRIGGERED      "HorTr" //HorTr 
+//Message structure: "goalMac, messageID, messageType, message"
+//messageTypes and what message they contain:
+#define MESSAGETYPE_COCL_REQUESTTEMPLATE    "TeReq" //TeReq N/A                     If master recevies command from module it does not know. Ask the module to send its template.
+#define MESSAGETYPE_CLCO_NEWCLIENTTEMPLATE  "NwClT" //NwClT (originMac)(TemplateID) When client comes online. Inform master of it's template. (Can also be sent if master asks for it "TeReq")
+#define MESSAGETYPE_CLCO_CONNECTIONCHANGED  "ConCh" //ConCh (updateCode)            When a connection on a pin on a module changes. Inform the master of the change. UpdateCode contains mac adresses
+#define MESSAGETYPE_COCL_UPDATEREQUEST      "UpReq" //UpReq N/A                     Master asks module to send all it's connections. Just in case it missed one.
+#define MESSAGETYPE_COCL_NEWEFFECT          "NewFX" //NewFX (effectCode)            Master sends a new effect to the module.
+#define MESSAGETYPE_HOCO_HORNTRIGGERED      "HorTr" //HorTr (originMac)             When someone talks into a horn. Inform the master.
 
 class ConnectorManager
 {

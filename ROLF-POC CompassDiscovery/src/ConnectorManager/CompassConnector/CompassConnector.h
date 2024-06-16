@@ -38,14 +38,18 @@
 #define TRANSMISSIONTYPE_PINTEST        'P'
 #define TRANSMISSIONTYPE_MESSAGE        'M'
 
+
+
 struct Transmission
 {
-    bool isIdentMessage;      //True if the message is an ident message, ident messages assign the moduleID to the module. If true goalID will be 255 in which case the MAC adress in the message will have to be parsed to kinda get the goal module (Instead of goalID)
-    uint8_t goalID;         //0 for master, 255 for unknown module (broadcast)
-    uint8_t senderID;       //0 for master, 255 for unknown module (broadcast).     Sender ID will be the last digit of the macAdress of the sender if IdentMessage is true. To avoid message being lost.
-    uint8_t connectorID;    //Directional Pin/port on which this message was received
-    uint64_t messageID;
+    //Message identificaiton.
+    String goalMac;         //Mac adress of the module that needs to receive this message. "MASTER" for master
+    uint8_t messageID;      //Unique ID for this message, so that no messages are retransmitted twice.
+    String messageType;     //Type of message that is contained in "message"
+    //Message content
     String message;
+    //Local
+    uint8_t connectorID;    //Directional Pin/port on which this message was received
 };
 
 class CompassConnector
@@ -73,10 +77,10 @@ class CompassConnector
 
     void prepareSerial_Read();
     void prepareSerial_Write();
-    void transmit();
-    bool readData(uint8_t *newNeighborAdress, uint8_t *newNeighborDirection);
+    void transmit(); //transmit_pinInfo
+    bool readData(uint8_t *newNeighborAdress, uint8_t *newNeighborDirection); //read_pinInfo
     uint8_t waitAndRead(bool *timedOut, uint16_t timeoutMillis);
-    void transmitAck();
+    void transmitAck(); //transmit_ack
     
 
     void saveNeighborData(uint8_t newNeighborAdress, uint8_t newNeighborDirection);
