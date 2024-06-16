@@ -26,7 +26,7 @@ class ConnectorManager
 
     uint8_t directionsTurn;
 
-    uint8_t moduleID = 0;
+    String macAdress;
     uint8_t sessionID = 0;
     uint8_t lastMessageID = 0;
 

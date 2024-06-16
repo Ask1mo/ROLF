@@ -6,13 +6,15 @@
 #include "SoftwareSerial.h"
 #include "pipePieces.h"
 
+#define SOFTSERIALTIMOUTTIME 10 //10ms
+
 #define NEIGH_CONNECTSTATE_UNKNOWN              0
 #define NEIGH_CONNECTSTATE_DISCONNECTED         1
 #define NEIGH_CONNECTSTATE_CONNECTED            2
 #define NEIGH_CONNECTSTATE_BLOCKED              3
 
 
-#define ADRESS_UNKNOWN 0
+#define ADRESS_UNKNOWN "000000"
 
 #define DIRECTIONS 6
 #define DIRECTION_NONE  0
@@ -38,6 +40,13 @@
 #define TRANSMISSIONTYPE_PINTEST        'P'
 #define TRANSMISSIONTYPE_MESSAGE        'M'
 
+struct LedUpdate
+{
+  uint8_t inputPanel;
+  uint8_t outputPanel;
+  uint8_t colour;
+  uint16_t offset;
+};
 
 
 struct Transmission
@@ -59,10 +68,10 @@ class CompassConnector
     uint8_t pin_sync;
     uint8_t direction;
     uint8_t connectionState;
-    uint8_t neighborAdress;
+    String neighborMacAdress;
     uint8_t neighborDirection;
     uint64_t lineClaimMillis;
-    uint8_t *moduleAdress;
+    String macAdress;
     bool serialMode;
     std::vector<String> updateCodes;
     uint64_t lastMillis_SyncPulse;
@@ -83,12 +92,12 @@ class CompassConnector
     void transmitAck(); //transmit_ack
     
 
-    void saveNeighborData(uint8_t newNeighborAdress, uint8_t newNeighborDirection);
+    void saveNeighborData(String newNeighborMacAdress, uint8_t newNeighborDirection);
 
     
 
     public:
-    CompassConnector(uint8_t pin_ident, uint8_t pin_sync, uint8_t direction, uint8_t *moduleAdress);
+    CompassConnector(uint8_t pin_ident, uint8_t pin_sync, uint8_t direction, String macAdress);
     void tick();
     
     void handlePinTest();
@@ -100,10 +109,12 @@ class CompassConnector
     void printConnector();
     void forgetNeighbor();
     uint64_t getLastPulseTime();
-    uint8_t getNeighborAdress();
+    String getNeighborMacAdress();
     uint8_t checkLineClaimed();
     uint8_t getDirection();
     void queueTransmission(Transmission transmission);
+
+    void transmit_busy();
 };
 
 String directionToString(uint8_t compassDirection);

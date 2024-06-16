@@ -35,3 +35,10 @@ Fix:        Entire moduleID system to identify modules will have to be replaced 
 Task:       Audio triggering
 Problem:    We need a way to know when someone is speaking into a horn.
 Pre-work:   Tried to get FFT code working. Arduino seems to be too slow. Didn't really know how to do this without involving hand-calibrated sensors. Was time pressed to finish other code.
+
+
+Task:       LedSyncPulse
+Problem:    There may be speed differences in how quick LED instructions go from master->Client->parsed->trinity->Leds.
+Fix:        Store led instructions in a buffer. Load instructions from this buffer when a "Led Sync" pin gets pulled down
+            When you detect a pin pulldown, also pull down your own pins so the whole network pulls down.
+            Pulldown time may not take longer than X ms. 

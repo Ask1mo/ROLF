@@ -22,13 +22,7 @@
 
 
 
-struct LedUpdate
-{
-  uint8_t inputPanel;
-  uint8_t outputPanel;
-  uint8_t colour;
-  uint16_t offset;
-};
+
   
 
 class Comms

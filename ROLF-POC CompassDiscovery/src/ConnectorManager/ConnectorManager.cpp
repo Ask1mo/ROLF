@@ -9,12 +9,12 @@ ConnectorManager::ConnectorManager(String macAdress)
     }
 
     this->compassConnectors = new CompassConnector*[DIRECTIONS];
-    this->compassConnectors[0] = new CompassConnector(PIN_IDENT_NORTH,  PIN_SYNC_NORTH,   DIRECTION_NORTH,    &macAdress);
-    this->compassConnectors[1] = new CompassConnector(PIN_IDENT_EAST,   PIN_SYNC_EAST,    DIRECTION_EAST,     &macAdress);
-    this->compassConnectors[2] = new CompassConnector(PIN_IDENT_SOUTH,  PIN_SYNC_SOUTH,   DIRECTION_SOUTH,    &macAdress);
-    this->compassConnectors[3] = new CompassConnector(PIN_IDENT_WEST,   PIN_SYNC_WEST,    DIRECTION_WEST,     &macAdress);
-    this->compassConnectors[4] = new CompassConnector(PIN_IDENT_UP,     PIN_SYNC_UP,      DIRECTION_UP,       &macAdress);
-    this->compassConnectors[5] = new CompassConnector(PIN_IDENT_DOWN,   PIN_SYNC_DOWN,    DIRECTION_DOWN,     &macAdress);
+    this->compassConnectors[0] = new CompassConnector(PIN_IDENT_NORTH,  PIN_SYNC_NORTH,   DIRECTION_NORTH,    macAdress);
+    this->compassConnectors[1] = new CompassConnector(PIN_IDENT_EAST,   PIN_SYNC_EAST,    DIRECTION_EAST,     macAdress);
+    this->compassConnectors[2] = new CompassConnector(PIN_IDENT_SOUTH,  PIN_SYNC_SOUTH,   DIRECTION_SOUTH,    macAdress);
+    this->compassConnectors[3] = new CompassConnector(PIN_IDENT_WEST,   PIN_SYNC_WEST,    DIRECTION_WEST,     macAdress);
+    this->compassConnectors[4] = new CompassConnector(PIN_IDENT_UP,     PIN_SYNC_UP,      DIRECTION_UP,       macAdress);
+    this->compassConnectors[5] = new CompassConnector(PIN_IDENT_DOWN,   PIN_SYNC_DOWN,    DIRECTION_DOWN,     macAdress);
     directionsTurn = 0;
     this->macAdress = macAdress;
 
@@ -81,7 +81,7 @@ void ConnectorManager::tick()
         for (int j = 0; j < DIRECTIONS; j++)
         {
             //If two connectors have the same neighbor, delete the oldest one. If any of the connectors have an unknown neighbor, ignore them
-            if(compassConnectors[i]->getNeighborAdress() == compassConnectors[j]->getNeighborAdress() && i != j && compassConnectors[i]->getNeighborAdress() != ADRESS_UNKNOWN && compassConnectors[j]->getNeighborAdress() != ADRESS_UNKNOWN)
+            if(compassConnectors[i]->getNeighborMacAdress() == compassConnectors[j]->getNeighborMacAdress() && i != j && compassConnectors[i]->getNeighborMacAdress() != ADRESS_UNKNOWN && compassConnectors[j]->getNeighborMacAdress() != ADRESS_UNKNOWN)
             {
                 //If i is the newest, delete j. Else delete i
                 if(compassConnectors[i]->getLastPulseTime() > compassConnectors[j]->getLastPulseTime()) compassConnectors[j]->forgetNeighbor();
@@ -140,7 +140,7 @@ void ConnectorManager::setConnectorsToBusy(uint8_t directionToIgnore)
 {
     for (int i = 0; i < DIRECTIONS; i++)
     {
-        if (i+1 != directionToIgnore) compassConnectors[i]->transmitBusy(true);
+        if (i+1 != directionToIgnore) compassConnectors[i]->transmit_busy();
     }
 }
 void ConnectorManager::setConnectorsToFree()
@@ -185,7 +185,7 @@ void ConnectorManager::parseTransmission(String message)
     }
 }
 
-void ConnectionManager::transmit(Transmission transmission)
+void ConnectorManager::transmit(Transmission transmission)
 {
     for (uint8_t i = 0; i < DIRECTIONS; i++)
     {
@@ -194,7 +194,7 @@ void ConnectionManager::transmit(Transmission transmission)
     }
 }
 
-void    ConnectionManager::reboot(String message)
+void    ConnectorManager::reboot(String message)
 {
   Serial.print(F("MANUAL REBOOT: "));
   Serial.println(message);

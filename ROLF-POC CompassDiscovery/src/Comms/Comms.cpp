@@ -8,25 +8,7 @@ void    Comms::transmit(String message)
   udp.endPacket();
 }
 
-void    Comms::connect()
-{
 
-  
-
-
-  udp.begin(SERVER_UDPPORT);
-  
-
-  uint16_t timeout = 10000;
-  while (moduleID == 0 || sessionID == 0) 
-  {
-    if (timeout-- == 0) reboot("Server connection failed. Restarting...");
-    Serial.print(".");
-    delay(1);
-    receiveAndParse();
-  }
-  Serial.println("Server Connected");
-}
 void    Comms::tick()
 {
   uint64_t currentMillis = millis();
