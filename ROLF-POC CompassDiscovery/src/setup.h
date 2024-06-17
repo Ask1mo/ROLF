@@ -2,7 +2,7 @@
 #define SETUP_H
 
 #include <Arduino.h>
-#include "pipePieces.h"
+#include "Data/globals.h"
 
 //Debug settings
 #define DEBUGLEVEL DEBUG_DISABLED   //This is the level of debug messages you'll receive. Not all code supports this type of messaging.
@@ -14,11 +14,9 @@
 #define DEBUG_DAYISRUINED           5
 //Debug settings
 
-//Wifi & UDP
+//Wifi
 #define WIFI_SSID "GLOWII"               //Wifi name
 #define PASSWORD "AskimoGlow"       //Password,                                                                                                 //TODO: needs changing
-#define SERVER_IP "192.168.137.112" //Should be Static IP of the master
-//Wifi & UDP
 
 //UART
 #define BAUDRATE_MONITOR 115200    //Serial monitor baudrate

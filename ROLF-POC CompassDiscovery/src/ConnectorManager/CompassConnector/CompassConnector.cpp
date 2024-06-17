@@ -1,176 +1,111 @@
 #include "CompassConnector.h"
 
-
-//Constructor
-CompassConnector::CompassConnector(uint8_t pin_ident, uint8_t pin_sync, uint8_t direction, String macAdress)
-{
-    if(DEBUGLEVEL >= DEBUG_OPERATIONS)
-    {
-        Serial.print(F("Creating CompassConnector at adress "));
-        Serial.println((int)this, DEC);
-    }
-
-    this->pin_ident = pin_ident;
-    this->pin_sync = pin_sync;
-    this->direction = direction;
-    this->macAdress = macAdress;
-    connectionState = NEIGH_CONNECTSTATE_UNKNOWN;
-    neighborMacAdress = ADRESS_UNKNOWN;
-    neighborDirection = DIRECTION_NONE;
-    lastMillis_SyncPulse = 0;
-    serialMode = SERIALMODE_DISABLED;
-
-    this->lockSystemOccupied = lockSystemOccupied;
-    this->releaseSystemOccupied = releaseSystemOccupied;
-
-    claimLine(false);
-
-    pinMode(pin_sync, INPUT_PULLUP);
-}
-
 //Private
-void CompassConnector::claimLine(bool enabled)
+bool            CompassConnector::waitAndRead           (uint8_t *data)
 {
-    if (serialMode)
-    {
-        softwareSerial->end();
-        delete softwareSerial;
-        serialMode = SERIALMODE_DISABLED;
-    }
+    *data = 0; //Set data to 0
 
-    if (enabled)// Claim line by pulling low
-    {   
-        pinMode(pin_ident, OUTPUT);
-        digitalWrite(pin_ident, LOW);
-    }
-    else //Release line back to high
+    if (lineMode != LINEMODE_SERIAL_READ)
     {
-        pinMode(pin_ident, INPUT_PULLUP);
+        Serial.println(F("Error: CompassConnector::waitndRead() called while not in read mode"));
+        return false;
     }
-}
-uint8_t CompassConnector::checkLineClaimed()
-{
-    if (connectionState == NEIGH_CONNECTSTATE_BLOCKED) return false; //Early return if module is chosen to be unreliable
-
-    bool lineClaimed = !digitalRead(pin_ident);
-    if (neighborIsBusy) //If the neighbor is already known to be busy:
-    {
-        if (lineClaimed) return TRANSMISSIONTYPE_BUSY; //If the line is claimed, return 'B' to indicate that the neighbor is still busy.
-        else  //If line voltage is HIGH, return false. Line is not claimed. Neigbor is available again
-        {
-            neighborIsBusy = false;
-            return false; //Line is no longer claimed
-        }
-    }
-    else if (!lineClaimed) return false; //If the connector is known to be not busy. And if line is not claimed. Return false. Line is not claimed.
-
-    //If this code is reached the line has been newly claimed. Figure out what kind of transmission is to be expected.
-    bool timedOut = false; //This var is not really doing anything. If waitAndRead() times out it will return 0 which is acceptable. (The timeout Bool can be ignored in this case )
-    uint8_t identifier = waitAndRead(&timedOut, SOFTSERIALTIMOUTTIME);  //When a modules claims a line it will send out an identifier to know what kind of transmisison is to be expected.
-    if (identifier == TRANSMISSIONTYPE_BUSY) neighborIsBusy = true; //If the identifier is 'B' the neighbor is busy and we should not send any messages to it.
-    return identifier; //After the identier is read, the message will immediately follow (Blocking code until message is received.). This message will have to be read elsewhere.
-}
-
-void CompassConnector::prepareSerial_Read()
-{
-    if (serialMode != SERIALMODE_DISABLED)
-    {
-        softwareSerial->end();
-        delete softwareSerial;
-    }
-    serialMode = SERIALMODE_READ;
-    softwareSerial = new EspSoftwareSerial::UART();
-    softwareSerial->begin(BAUDRATE_SYSTEM, EspSoftwareSerial::SWSERIAL_8N1, pin_ident, PIN_DEAD, false, 256);
-}
-void CompassConnector::prepareSerial_Write()
-{
-    if (serialMode != SERIALMODE_DISABLED)
-    {
-        softwareSerial->end();
-        delete softwareSerial;
-    }
-    serialMode = SERIALMODE_WRITE;
-    softwareSerial = new EspSoftwareSerial::UART();
-    softwareSerial->begin(BAUDRATE_SYSTEM, EspSoftwareSerial::SWSERIAL_8N1, PIN_DEAD, pin_ident, false, 256);
-}
-void CompassConnector::transmit()
-{
-    prepareSerial_Write();
-    const char* macAdressCString = this->macAdress.c_str();
-    softwareSerial->write(macAdressCString);
-    delay(PULSELENGTH_SYNC);
-    softwareSerial->write(direction);
-    claimLine(false); //To make sure the data line returns to HIGH, release it.
-}
-void CompassConnector::transmitAck()
-{
-    prepareSerial_Write();
-    softwareSerial->write("Ack");
-    claimLine(false);
-}
-
-uint8_t CompassConnector::waitAndRead(bool *timedOut, uint16_t timeoutMillis)
-{
-    //TimedOut will start as false, but if the function times out it will be set to true.
-    if (*timedOut) 
-    {
-        Serial.println(F("Timed out, early return in CompassConnector::waitAndRead();"));
-        return false; //If the function has already timed out, return false. It means it timed out in an earlier read.
-    }
-    prepareSerial_Read();
-
+    
     uint64_t lastMillis_ReadStart = millis();
 
     while (!softwareSerial->available())
     {
-        if ( millis() - lastMillis_ReadStart > timeoutMillis)
+        if (millis() - lastMillis_ReadStart > SOFTSERIALTIMOUTTIME)
         {
             Serial.println(F("Timeout"));
-            claimLine(false);
-            *timedOut = true;
             return false;
         }
     }
-    uint8_t readResult = softwareSerial->read();
-    claimLine(false);
-    return readResult;
+
+    *data = softwareSerial->read();
+    return true;
 }
-String directionToString(uint8_t compassDirection)
+void            CompassConnector::setLineMode           (uint8_t newLineMode)
 {
-    switch (compassDirection)
+    if (lineMode == newLineMode) return;
+
+    if (lineMode == LINEMODE_BUSY && newLineMode != LINEMODE_IDLE)
     {
-        case DIRECTION_NONE:
-            return "DIRECTION_NONE";
+        Serial.print(F("Error: CompassConnector::setLineMode() - Trying to change from busy to something other than idle: "));
+        Serial.println(newLineMode);
+        return;
+    }
+
+    switch (newLineMode)
+    {
+        case LINEMODE_IDLE:
+        {
+            if (lineMode == LINEMODE_SERIAL_READ || lineMode == LINEMODE_SERIAL_WRITE)
+            {
+                softwareSerial->end();
+                delete softwareSerial;
+            }
+            pinMode(pin_comms, INPUT_PULLUP);
+        }
         break;
 
-        case DIRECTION_NORTH:
-            return "North";
+        case LINEMODE_PULLCLAIMED:
+        {
+            if (lineMode == LINEMODE_SERIAL_READ || lineMode == LINEMODE_SERIAL_WRITE)
+            {
+                softwareSerial->end();
+                delete softwareSerial;
+            }
+            pinMode(pin_comms, OUTPUT);
+            digitalWrite(pin_comms, LOW);
+        }
         break;
 
-        case DIRECTION_EAST:
-            return "East ";
+        case LINEMODE_BUSY:
+        {
+            if (lineMode == LINEMODE_SERIAL_READ || lineMode == LINEMODE_SERIAL_WRITE)
+            {
+                softwareSerial->end();
+                delete softwareSerial;
+            }
+            pinMode(pin_comms, OUTPUT);
+            digitalWrite(pin_comms, HIGH);
+        }
         break;
 
-        case DIRECTION_SOUTH:
-            return "South";
+        case LINEMODE_SERIAL_READ:
+        {
+            if (lineMode == LINEMODE_SERIAL_WRITE)
+            {
+                softwareSerial->end();
+                delete softwareSerial;
+            }
+            softwareSerial = new EspSoftwareSerial::UART();
+            softwareSerial->begin(BAUDRATE_SYSTEM, EspSoftwareSerial::SWSERIAL_8N2, pin_comms, PIN_DEAD, false, 256);
+        }
         break;
 
-        case DIRECTION_WEST:
-            return "West ";
-        break;
-
-        case DIRECTION_UP:
-            return "Up   ";
-        break;
-
-        case DIRECTION_DOWN:
-            return "Down ";
+        case LINEMODE_SERIAL_WRITE:
+        {
+            if (lineMode == LINEMODE_SERIAL_READ) 
+            {
+                softwareSerial->end();
+                delete softwareSerial;
+            }
+            pinMode(pin_comms, OUTPUT);     //Dunno if this is a good idea
+            digitalWrite(pin_comms, LOW);   //Dunno if this is a good idea
+            softwareSerial = new EspSoftwareSerial::UART();
+            softwareSerial->begin(BAUDRATE_SYSTEM, EspSoftwareSerial::SWSERIAL_8N2, PIN_DEAD, pin_comms, false, 256);
+        }
         break;
     }
-    return "ERROR_DIRECTIONTOSTRING";
+    lineMode = newLineMode;
 }
-void CompassConnector::saveNeighborData(String newNeighborMacAdress, uint8_t newNeighborDirection)
+void            CompassConnector::saveNeighborData      (String newNeighborMacAdress, uint8_t newNeighborDirection)
 {
+    Serial.println(F("Saving neighbor data: "));
+
+
     if (newNeighborMacAdress != neighborMacAdress || newNeighborDirection != neighborDirection)
     {
         neighborMacAdress = newNeighborMacAdress;
@@ -184,52 +119,118 @@ void CompassConnector::saveNeighborData(String newNeighborMacAdress, uint8_t new
         
         Serial.println();
         Serial.print(F("Mac: "));
-        Serial.print(macAdress);
+        Serial.print(sixCharMacToColonMac(macAdress));
         Serial.print(F(" - NeighborMac: "));
-        Serial.print(neighborMacAdress);
+        Serial.print(sixCharMacToColonMac(neighborMacAdress));
         Serial.print(F(" connected on side "));
         Serial.print(directionToString(direction));
         Serial.print(F(" - Neigbor's side: "));
         Serial.println(directionToString(neighborDirection));
-        /*
-        Serial.print("ReconvertTest: ");
-        Serial.print((uint8_t)updateCode[0]);
-        Serial.print(" ");
-        Serial.print((uint8_t)updateCode[1]);
-        Serial.print(" ");
-        Serial.print((uint8_t)updateCode[2]);
-        Serial.print(" ");
-        Serial.print((uint8_t)updateCode[3]);
-        Serial.println();
-        */
+    }
+    else
+    {
+        Serial.print(F("Neighbor already known: "));
+        Serial.print(F("Mac: "));
+        Serial.print(sixCharMacToColonMac(macAdress));
+        Serial.print(F(" - NeighborMac: "));
+        Serial.print(sixCharMacToColonMac(neighborMacAdress));
+        Serial.print(F(" connected on side "));
+        Serial.print(directionToString(direction));
+        Serial.print(F(" - Neigbor's side: "));
+        Serial.println(directionToString(neighborDirection));
     }
 }
+void            CompassConnector::pinTransmitV2         (String data)// Replaces all the other outbound transissions
+{
+    setLineMode(LINEMODE_PULLCLAIMED);
+    delay(5); //REMOVE THIS DELAY
+    setLineMode(LINEMODE_SERIAL_WRITE);
+    for (int i = 0; i < data.length(); i++)
+    {
+        softwareSerial->write(data[i]);
+        delay(5); //Extra delay for stability during debugging. (Remove this delay)
+    }
+    setLineMode(LINEMODE_IDLE);
+}
+//Constructor
+CompassConnector::CompassConnector                      (uint8_t pin_comms, uint8_t pin_ledSync, uint8_t direction, String macAdress)
+{
+    if(DEBUGLEVEL >= DEBUG_OPERATIONS)
+    {
+        Serial.print(F("Creating CompassConnector at adress "));
+        Serial.println((int)this, DEC);
+    }
 
+    this->pin_comms = pin_comms;
+    this->pin_ledSync = pin_ledSync;
+    this->direction = direction;
+    this->macAdress = macAdress;
+
+    pinMode(pin_ledSync, INPUT_PULLUP);
+    setLineMode(LINEMODE_IDLE);
+}
 //Public
-void CompassConnector::tick()
+void            CompassConnector::tick                  ()
 {
     //Check if the connection is still alive. (AKA: Did we receive a pulse in the last X seconds? If not, say that we are disconnected.)
-    if (lastMillis_SyncPulse + INTERVAL_SYNCPULSE_MAXABSENCE < millis() && connectionState != NEIGH_CONNECTSTATE_DISCONNECTED)
+    if (lastMillis_PinTest + MAXINTERVALMILLIS_PINTEST < millis() && connectionState != NEIGH_CONNECTSTATE_DISCONNECTED)
     {
-        saveNeighborData(ADRESS_UNKNOWN, DIRECTION_NONE);
-        connectionState = NEIGH_CONNECTSTATE_DISCONNECTED;
+        forgetNeighbor();
     }
 }
-
-void CompassConnector::handlePinTest()
+uint8_t         CompassConnector::checkLineClaimed      ()
 {
-    lastMillis_SyncPulse = millis(); //Obsolete?
+    if (connectionState == NEIGH_CONNECTSTATE_BLOCKED) return false; //Early return if module is chosen to be unreliable
 
-    String newNeighborMacAdress;
-    uint8_t newNeighborDirection;
-    
-    
-    bool timedOut = false;
-    String incomingPinTestData = "";
-    while (timedOut == false) incomingPinTestData += char(waitAndRead(&timedOut, SOFTSERIALTIMOUTTIME));
-    
-    if (incomingPinTestData.length() < 7) //If the incoming data is too short, return false. Data went missing during transmit
+    if (lineMode == LINEMODE_BUSY) 
     {
+        Serial.println(F("Error: CompassConnector::checkLineClaimed() - Trying to check line while in busy mode"));
+        return false; //Early return if the module is  busy. Module should never be running code while busy.
+    }
+
+    bool lineClaimed = !digitalRead(pin_comms); //Check if the line is claimed by the neighbor
+    if (neighborBusy) //If it's already known the neighbor is busy.
+    {
+        if (lineClaimed) lastMillis_CharReceived = millis(); //If the line is already known to be busy. Don't inform.  (Now just wait untill the line is free again. Then we're allowed to inform again)
+        else if (millis() - lastMillis_CharReceived > CHARFREETIME) neighborBusy = false; //If line is released/ Check if enough time has passed since last character. More transmissions may be coming. (If not, the line is free and we can listen for identifiers again.)
+        return false; //No new transmission is to be expected (because we secretly already know the line has already been claimed because neighbor is busy.)
+    }
+    
+    if (!lineClaimed) return false; //If line is not claimed. Return false. No new transmissions are to be expected.
+
+    //If this code is reached the line has been newly claimed. Figure out what kind of transmission is to be expected.
+    setLineMode(LINEMODE_SERIAL_READ);
+    
+    uint8_t identifier = 0;
+    if (!waitAndRead(&identifier)) //When a modules claims a line it will send out an identifier to know what kind of transmisison is to be expected.
+    {
+        neighborBusy = true;
+        return TRANSMISSIONTYPE_BUSY; //If the identifier is not received in time it means the neighbor sent out a busy signal. (busy signal keeps the line low)
+    }
+
+    setLineMode(LINEMODE_IDLE);
+    return identifier; //After the identier is read, the message will immediately follow (Blocking code until message is received.). This message will have to be read elsewhere.
+}
+void            CompassConnector::handlePinTest         ()
+{
+    Serial.println(F("Pt"));
+    lastMillis_PinTest = millis(); //Obsolete?
+
+    setLineMode(LINEMODE_SERIAL_READ);
+    String incomingPinTestData = "";
+    while (true)
+    {
+        uint8_t incomingChar = 0;
+        if(!waitAndRead(&incomingChar)) break;
+        incomingPinTestData += char(incomingChar);
+    }
+
+    if (incomingPinTestData.length() != MESSAGELENGTH_PINTEST) //If the incoming data is too short, return false. Data went missing during transmit
+    {
+        Serial.print(F("PinTest data too short. Length was: "));
+        Serial.print(incomingPinTestData.length());
+        Serial.print(F(" - Data: "));
+        printStringAsHex(incomingPinTestData);
         connectionState = NEIGH_CONNECTSTATE_UNKNOWN;
         saveNeighborData(ADRESS_UNKNOWN, DIRECTION_NONE);
         return;
@@ -237,15 +238,16 @@ void CompassConnector::handlePinTest()
     connectionState = NEIGH_CONNECTSTATE_CONNECTED;
     saveNeighborData(incomingPinTestData.substring(0, 6), (uint8_t)incomingPinTestData[6]);
 }
-
-Transmission CompassConnector::handleMessageRead()
+Transmission    CompassConnector::handleMessageRead     ()
 {
     //Read transmission
-    bool timedOut = false; 
+    setLineMode(LINEMODE_SERIAL_READ);
     String transmissionString = "";
-    while (!timedOut)
+    while (true)
     {
-        transmissionString += char(waitAndRead(&timedOut, SOFTSERIALTIMOUTTIME));
+        uint8_t incomingChar;
+        if(!waitAndRead(&incomingChar)) break;
+        transmissionString += char(incomingChar);
     }
 
     //Check if message is long enough to be a transmission
@@ -266,27 +268,62 @@ Transmission CompassConnector::handleMessageRead()
     incomingTransmission.messageType    = transmissionString.substring(7, 12);  //5 byte
     incomingTransmission.message        = transmissionString.substring(12);     //Rest of the message
 
-    transmitAck();
     return incomingTransmission;
 }
-
-
-
-void CompassConnector::sendPulse_Ident()
+void            CompassConnector::transmit_pinTest      ()
 {
-    claimLine(true);
-    delay(PULSELENGTH_SYNC);
-    transmit();
+    String data = "";
+    data += char(TRANSMISSIONTYPE_PINTEST);
+    data += macAdress;
+    data += char(direction);
+    pinTransmitV2(data);
 }
-void CompassConnector::sendPulse_Sync()
+void            CompassConnector::setBusy               (bool busy)
 {
-    pinMode(pin_sync, OUTPUT);
-    digitalWrite(pin_sync, LOW);
-    delay(PULSELENGTH_SYNC);
-    pinMode(pin_sync, INPUT_PULLUP);
+    if (busy)
+    {
+        if (lineMode == LINEMODE_BUSY)
+        {
+            Serial.println(F("Error: CompassConnector::setBusy() - Trying to set busy while it already was busy. This is not allowed"));
+        }
+        else
+        {
+            setLineMode(LINEMODE_BUSY);
+        }
+    }
+    else
+    {
+        if (lineMode != LINEMODE_BUSY)
+        {
+            Serial.println(F("Error: CompassConnector::setBusy() - Trying to set not busy while it was not busy. This is not allowed"));
+        }
+        else
+        {
+            setLineMode(LINEMODE_IDLE);
+        }
+    }
 }
+void            CompassConnector::forgetNeighbor        ()
+{
+    //DOnt do anything if neighbor isnt there
+    if (connectionState == NEIGH_CONNECTSTATE_DISCONNECTED || connectionState == NEIGH_CONNECTSTATE_UNKNOWN) return;
 
-String CompassConnector::getUpdateCode()
+
+    Serial.print(F("Forced to forget neighbor "));
+    Serial.print(neighborMacAdress);
+    Serial.print(F(" on side "));
+    Serial.print(directionToString(direction));
+    Serial.print(F(" - Neigbor's side: "));
+    Serial.println(directionToString(neighborDirection));
+    
+    saveNeighborData(ADRESS_UNKNOWN, DIRECTION_NONE);
+    connectionState = NEIGH_CONNECTSTATE_DISCONNECTED;
+}
+uint64_t        CompassConnector::getLastMillis_PinTest ()
+{
+    return lastMillis_PinTest;
+}
+String          CompassConnector::getConnectionUpdate   ()
 {
     if (updateCodes.size() == 0) return "";
     
@@ -294,7 +331,15 @@ String CompassConnector::getUpdateCode()
     updateCodes.erase(updateCodes.begin());
     return updateCodeToSend;
 }
-void CompassConnector::printConnector()
+String          CompassConnector::getNeighborMacAdress  ()
+{
+    return neighborMacAdress;
+}
+uint8_t         CompassConnector::getDirection          ()
+{
+    return direction;
+}
+void            CompassConnector::printConnector        ()
 {
     Serial.print(F("Connector: "));
     Serial.print(directionToString(direction));
@@ -302,7 +347,7 @@ void CompassConnector::printConnector()
     if(connectionState == NEIGH_CONNECTSTATE_CONNECTED)
     {
         Serial.print(F(" - Connected to "));
-        Serial.print(neighborMacAdress);
+        Serial.print(sixCharMacToColonMac(neighborMacAdress));
         Serial.print(F(" on side "));
         Serial.println(directionToString(neighborDirection));
     }
@@ -314,43 +359,4 @@ void CompassConnector::printConnector()
         Serial.println(connectionState);
     }
 
-}
-
-void CompassConnector::forgetNeighbor()
-{
-    /*
-    Serial.print(F("Forced to forget neighbor "));
-    Serial.print(neighborAdress);
-    Serial.print(F(" on side "));
-    Serial.print(directionToString(direction));
-    Serial.print(F(" - Neigbor's side: "));
-    Serial.println(directionToString(neighborDirection));
-    */
-
-    saveNeighborData(ADRESS_UNKNOWN, DIRECTION_NONE);
-    connectionState = NEIGH_CONNECTSTATE_DISCONNECTED;
-}
-uint64_t CompassConnector::getLastPulseTime()
-{
-    return lastMillis_SyncPulse;
-}
-String CompassConnector::getNeighborMacAdress()
-{
-    return neighborMacAdress;
-}
-
-uint8_t CompassConnector::getDirection()
-{
-    return direction;
-}
-void CompassConnector::transmit_busy()
-{
-    prepareSerial_Write();
-    softwareSerial->write('B');
-    claimLine(false);
-}
-
-void CompassConnector::queueTransmission(Transmission transmission)
-{
-    transmissions.push_back(transmission);
 }

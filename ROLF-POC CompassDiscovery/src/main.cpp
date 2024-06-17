@@ -54,12 +54,9 @@ void setup()
     &Task2,          /* Task handle to keep track of created task */
     1               /* pin task to core 1 */
   ); 
-
-  Serial.println(F("----- ===== Setup finished ===== -----"));
 }
 void loop() //Not used, use task_main and task_leds instead
 {
-  Serial.println("If you reach this code: You're fucked :D");
 }
 void task_main( void *pvParameters ) //Multicore replacement for "loop()"
 {
@@ -75,16 +72,28 @@ void task_main( void *pvParameters ) //Multicore replacement for "loop()"
   Serial.println(WIFI_SSID);
 
   //OTA
-  String mac = WiFi.macAddress();
-  mac.replace(":", ""); // Remove colons from MAC address
-  String hostname = "ESP_" + mac;
+  String hostname = "ESP_" + colonMacToSixCharMac(WiFi.macAddress());
   ArduinoOTA.setHostname(hostname.c_str()); // Set the hostname
   ArduinoOTA.begin(); // Initialize OTA
   Serial.println("OTA hostname: ");
   Serial.println(hostname);
 
   //Comms
-  connectorManager = new ConnectorManager(WiFi.macAddress());
+  uint8_t sixByteMacArray[6];
+  WiFi.macAddress(sixByteMacArray);
+  String sixByteMacString = "";
+  for (uint8_t i = 0; i < 6; i++)
+  {
+    sixByteMacString += (char)sixByteMacArray[i];
+  }
+  Serial.print("6 byte Mac adress string: ");
+  Serial.println(sixByteMacString);
+
+  String dingus = sixCharMacToColonMac(sixByteMacString);
+  
+
+  Serial.println("Beepus");
+  connectorManager = new ConnectorManager(sixByteMacString); //Use shortneded macadress
 
   //Setup end
   Serial.println("----- ===== Task Main Setup Complete ===== -----");
@@ -110,7 +119,7 @@ void task_main( void *pvParameters ) //Multicore replacement for "loop()"
       }
     }
 
-    //Getting led updates from comms into shared memory
+    //Putting led updates from comms into shared memory
     if (!memoryReserved) //If memory is not reserved by task_leds
     {
       memoryReserved = true;
@@ -122,9 +131,7 @@ void task_main( void *pvParameters ) //Multicore replacement for "loop()"
       memoryReserved = false;
     }
 
-    //Detecing pin changes and sending them to the master
-    String updateCode = connectorManager->getUpdateCode();
-    if (updateCode != "") connectorManager->transmit(MESSAGETYPE_CLCO_CONNECTIONCHANGED, updateCode);
+    
     connectorManager->tick();
 
     vTaskDelay(1);
@@ -133,7 +140,7 @@ void task_main( void *pvParameters ) //Multicore replacement for "loop()"
 void task_leds( void *pvParameters ) //Multicore replacement for led printings
 {
   //Setup
-  Serial.println("Task Leds started");
+  Serial.println("----- ===== Task Leds Setup Started ===== -----");
 
   BaseInfo baseInfo = getBaseInfo(SELECTEDPRESET);
 
@@ -161,7 +168,7 @@ void task_leds( void *pvParameters ) //Multicore replacement for led printings
     }
   }
 
-  Serial.println("Task Leds setup complete");
+  Serial.println("----- ===== Task Leds Setup Complete ===== -----");
 
   //Loop
   while (1)

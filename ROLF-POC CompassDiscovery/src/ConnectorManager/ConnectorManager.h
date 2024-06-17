@@ -4,8 +4,7 @@
 #include "setup.h"
 #include "CompassConnector/CompassConnector.h"
 
-
-#define INTERVAL_SYNCPULSE 1000             // 1 second
+#define INTERVAL_PINTEST 1000             //Interval at which the next pin test is done
 
 //Message structure: "goalMac, messageID, messageType, message"
 //messageTypes and what message they contain:
@@ -18,45 +17,31 @@
 
 class ConnectorManager
 {
-    private:
-    CompassConnector **compassConnectors;
-    bool connectComplete;
-
-    uint64_t lastIdentPulseMillis;
-
-    uint8_t directionsTurn;
-
-    String macAdress;
-    uint8_t sessionID = 0;
-    uint8_t lastMessageID = 0;
-
-    std::vector<LedUpdate> ledUpdates_buffer; //Quick dump so incoming transmissions are always stored
-
-    void setConnectorsToBusy(uint8_t directionToIgnore);
-    void setConnectorsToFree();
-    void reboot(String message);//Odd place to have this here.
-    void retransmit(Transmission transmission);
-
-    
-
-
-
-    public:
-    ConnectorManager(String macAdress);
-    void tick();
-    void sendSyncSignal();
-    String getUpdateCode();
-    void printConnectors();
-    void addLedPipe(uint8_t direction, uint8_t basePipeType);
-    void setSystemOccupied();
-    void setSystemFree();
-    void lockSystemOccupied();
-    void releaseSystemOccupied();
-    void parseTransmission(String message);
-    void transmit(String messageType, String message = ""); 
-    std::vector<LedUpdate> getLedUpdates();
+private:
+//Static
+    String                  macAdress;                                                                      //Mac adress of this module
+    CompassConnector        **compassConnectors;                                                            //Array of connectors in this module
+//Pin tests
+    uint64_t                lastMillis_PinTest;                                                             //Last time a pin test was done
+    uint8_t                 currentPinTestDirection = 0;                                                    //Current pin test direction
+//Retransmission prevention
+    uint8_t                 lastMessageID = 0;                                                              //Last transmissionID created for transmessions generated from this module
+//Transmission buffers
+    std::vector<LedUpdate>  ledUpdates_buffer;                                                              //Quick dump so incoming transmissions are always stored
+//Transmissions
+    void                    parseTransmission   (String message);                                           //Parse incoming transmissions read from the connectors
+    void                    retransmit          (Transmission transmission);                                //Used if a transmission has been received that's not meant for this module. Sends the message to all connectors for transmisison.
+    void                    setSystemBusy       (uint8_t directionThatsActuallyDoingSomething, bool busy);  //Set all other pins busy so no transmissions are missed on those pins
+//Debug
+    void                    printConnectors     ();                                                         //Print all connectors
+public:
+//Constructor
+    ConnectorManager                            (String macAdress);                                         //Constructor
+//Loop
+    void                    tick                ();                                                         //Loop
+//Transmissions
+    void                    transmit            (String messageType, String message = "");                  //Generate new transmission and transmit
+//Getters
+    std::vector<LedUpdate>  getLedUpdates       ();                                                         //Get all led updates            
 };
-
-
-
 #endif
