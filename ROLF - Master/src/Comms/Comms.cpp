@@ -12,35 +12,52 @@ void    Comms::reboot(String message)
   ESP.restart();
 }
 
-void    Comms::transmit(String message, String clientIP)
+void    Comms::transmit(String goalMac, String message)
 {
-  if (clientIP == "192.168.137.112") return; //Ignore myself
-  Serial.print(F("UDP TRANSMIT: "));
-  Serial.print(clientIP);
-  Serial.print(F(" - "));
-  Serial.println(message);
-  udp.beginPacket(clientIP.c_str(), SERVER_UDPPORT);
-  udp.write((uint8_t *)message.c_str(), message.length());
-  udp.endPacket();
-} 
+  lastMessageID++;
+  retransmit(Transmission{"MASTER", lastMessageID, messageType, message, DIRECTION_NONE});
+}
+
+void                    Comms::parseTransmission (String message)
+{
+    Serial.print("Parsing message: ");
+    Serial.println(message);
+
+    if (message.startsWith(MESSAGETYPE_COCL_REQUESTTEMPLATE))
+    {
+        lastMessageID++;
+        retransmit(Transmission{"MASTER", lastMessageID, MESSAGETYPE_CLCO_NEWCLIENTTEMPLATE, macAdress + (char)SELECTEDPRESET, DIRECTION_NONE});
+    }
+
+    if (message.startsWith(MESSAGETYPE_COCL_UPDATEREQUEST))
+    {
+      Serial.println("Update requested, not implemented");
+    }
+
+    if (message.startsWith(MESSAGETYPE_COCL_NEWEFFECT))
+    {
+      uint8_t inputDirection = (uint8_t)message[5];
+      uint8_t outputDirection = (uint8_t)message[6];
+      uint8_t color = (uint8_t)message[7];
+      uint16_t delayOffset = ((uint8_t)message[8] << 8) | (uint8_t)message[9];
+
+      LedUpdate newLedUpdate = LedUpdate{inputDirection, outputDirection, color, delayOffset};
+
+      ledUpdates_buffer.push_back(newLedUpdate);
+
+      Serial.print("New effect received. Input Direction: ");
+      Serial.print(inputDirection);
+      Serial.print(", Output Direction: ");
+      Serial.print(outputDirection);
+      Serial.print(", Color: ");
+      Serial.print(color);
+      Serial.print(", Delay Offset: ");
+      Serial.println(delayOffset);  
+    }
+}
+
 void    Comms::receiveAndParse()
 {
-  //Message Receiving
-  if (udp.parsePacket())
-  { 
-    char incomingPacket[255];
-    int len = udp.read(incomingPacket, 255);
-    if (len > 0) incomingPacket[len] = 0;
-    
-
-    //Message handling
-    String message = String(incomingPacket);
-    message.trim();
-    
-    Serial.print(F("UDP RECEIVED: "));
-    Serial.println(message);
-    
-
     if (message.startsWith(MESSAGE_CLCO_NEWCLIENTFULL))//Message contains 8 pieces of data: macAdress, heartPiece, n, e, s, w, u, d
     {
       Serial.println("New client full message received. Not implemented");

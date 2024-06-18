@@ -773,7 +773,7 @@ void ModuleManager::tempPathfindingDemo()
             }
             
             uint16_t newDelay;
-            if  (path.size() > 1
+            if  (path.size() > 1)
             {
                 if (!pipeInstructions.empty()) {
                     newDelay = pipeInstructions.back().delayOffset + pipeInstructions.back().delayMine;
