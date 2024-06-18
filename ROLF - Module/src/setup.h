@@ -2,7 +2,7 @@
 #define SETUP_H
 
 #include <Arduino.h>
-#include "pipePieces.h"
+#include "Data/globals.h"
 
 //Debug settings
 #define DEBUGLEVEL DEBUG_DISABLED   //This is the level of debug messages you'll receive. Not all code supports this type of messaging.
@@ -14,11 +14,9 @@
 #define DEBUG_DAYISRUINED           5
 //Debug settings
 
-//Wifi & UDP
+//Wifi
 #define WIFI_SSID "GLOWII"               //Wifi name
 #define PASSWORD "AskimoGlow"       //Password,                                                                                                 //TODO: needs changing
-#define SERVER_IP "192.168.137.112" //Should be Static IP of the master
-//Wifi & UDP
 
 //UART
 #define BAUDRATE_MONITOR 115200    //Serial monitor baudrate
@@ -51,16 +49,9 @@
 //Heartpiece is to define the type of heartpiece used in the preset.
 //Pipe_Length is to define the amount of pipe pieces need to be shown on the puzzle grid in the master.
 //Pipe_Delay is to define the delay of the leds (How long does it take for the leds to through the pipe piece) 
-#define XFACTOR 20 //Standardised delay factor for standard length pipe pieces
 
-#define SELECTEDPRESET PRESET_255_Horn //This is where you select the type15 of pipe you're using
-#define PRESET_1_DEBUGCROSS         1
-#define PRESET_2_AllCross1          2
-#define PRESET_3_STRIJP_SINGLEPIPE  3
-#define PRESET_253_STRIJP_HORNWEIRD 253
-#define PRESET_254_STRIJP_HORNLONG  254
-#define PRESET_255_Horn             255
 
+#define SELECTEDPRESET PRESET_255_Horn //This is where you select the type15 of pipe you're using. These presets are defined in globals.h
 /*---=== Module/Pipe Presets ===---*/
 
 
@@ -71,7 +62,6 @@
 
 
 /*---=== Trinity setup ===---*/
-#define PANELSETUP_VOICETUBE_PSV    //This is where you select the type of panel you're using. Old feature from Trinity
 #define PLATFORM_ESP32_WROOMDEVKIT  //This is where you select the type of platform you're using. Old feature from Trinity
 #define LEDTYPE_STANDARD            //This is where you select the type of LED strip you're using. Old feature from Trinity
 #define ENABLE_DIODECONTROL true    //This is where you select if you want to use individual diode control. Old feature from Trinity

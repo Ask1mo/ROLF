@@ -1,0 +1,49 @@
+Task:       Persistence of connection
+Current:    Every time you speak in a horn the connection will be random to a random horn.
+Goal:       We want people to stay connected as long as they keep talking to each other.
+Fix:        Implement a system to keep horns connected to each other. The path tracing can/must still be random every time. But keep the Origin/Goal horn the same as long as they keep talking.
+
+Task:       Horn colour matching
+Problem:    Colours coming from horns is randomised
+Fix:        Implement system so that specific horns will always have line patters coming from them with the horn's corresponding colour.
+Example:    Soundwaves coming from the "Red" horn must always have a red colour.
+Why:        Team decided it. I think it's fine. put this low on your list lol. Or at least implement it together with a "Horn colour assignment" idea
+
+Task:       Horn colour assignment
+Idea:       Assign colours to horns. Every once in a while. 30-120s. Reassign the colours of all horns. Fits together with the "Persistence of connection" task
+
+
+
+Task:       Transmission reliability
+Problem:    Communication over the comms_pin in the compassConnector class are unreliable. And are occassionally incorrect.
+Current:    All transmitting should be done in the "pinTransmitV2()" function and all reading is done in the "waitAndRead()" function.
+            These functions appear correct but still don't function correctly.
+Fix:        Find God and use him to fix my code
+Fix2:       (Band-aid) When transmissions are unreliable. Force ignore the message
+Note:       There are delays used in tranmissions. I tried to use them as a last resort and for debugging. Should be removed.
+Note:       I've written up a doc that explains some more info. + logic analyser findings.
+
+Task        Double retransmission prevention
+Problem     Messages are just shouted around the network.
+Fix:        Let the connectorManager check if the message has already been transmitted by saving who sent it (or to who it's sent) and it's messageID.
+            If a message comes in to be retransmitted. Check if that message has already been sent. 
+
+Task:       Audio triggering
+Problem:    We need a way to know when someone is speaking into a horn.
+Pre-work:   Tried to get FFT code working. Arduino seems to be too slow. Didn't really know how to do this without involving hand-calibrated sensors. Was time pressed to finish other code.
+
+
+Task:       LedSyncPulse
+Problem:    There may be speed differences in how quick LED instructions go from master->Client->parsed->trinity->Leds.
+Fix:        Store led instructions in a buffer. Load instructions from this buffer when a "Led Sync" pin gets pulled down
+            When you detect a pin pulldown, also pull down your own pins so the whole network pulls down.
+            Pulldown time may not take longer than X ms.
+Note:       We already reserved pins for ledSync pulses. These are also found in the compassConnector class.
+
+Task:       Document pins on PCB
+Problem:    You can only see pin numbers on the PCB.
+Fix:        Add indicators on the pcb. N E S W U D, LedPin, NoiseSensor, 
+
+
+Task:       getter uniformity
+Problem:    In connec
