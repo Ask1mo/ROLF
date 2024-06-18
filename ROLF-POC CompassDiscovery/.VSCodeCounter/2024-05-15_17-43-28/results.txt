@@ -1,0 +1,37 @@
+Date : 2024-05-15 17:43:28
+Directory : c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF-POC CompassDiscovery\src
+Total : 9 files,  695 codes, 157 comments, 179 blanks, all 1031 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| C++      |          9 |        695 |        157 |        179 |      1,031 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++-----------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                                              | files      | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                                                 |          9 |        695 |        157 |        179 |      1,031 |
+| . (Files)                                                                                                                         |          3 |        209 |        126 |         83 |        418 |
+| AskButton                                                                                                                         |          2 |        111 |          6 |         20 |        137 |
+| CompassConnector                                                                                                                  |          2 |        283 |         22 |         50 |        355 |
+| ConnectorManager                                                                                                                  |          2 |         92 |          3 |         26 |        121 |
++-----------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-----------------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                                                                          | language | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF-POC CompassDiscovery\src\AskButton\AskButton.cpp               | C++      |         83 |          6 |         12 |        101 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF-POC CompassDiscovery\src\AskButton\AskButton.h                 | C++      |         28 |          0 |          8 |         36 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF-POC CompassDiscovery\src\CompassConnector\CompassConnector.cpp | C++      |        221 |         20 |         28 |        269 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF-POC CompassDiscovery\src\CompassConnector\CompassConnector.h   | C++      |         62 |          2 |         22 |         86 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF-POC CompassDiscovery\src\ConnectorManager\ConnectorManager.cpp | C++      |         70 |          3 |         14 |         87 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF-POC CompassDiscovery\src\ConnectorManager\ConnectorManager.h   | C++      |         22 |          0 |         12 |         34 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF-POC CompassDiscovery\src\main.cpp                              | C++      |        145 |         11 |         38 |        194 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF-POC CompassDiscovery\src\pipePieces.h                          | C++      |         22 |        110 |         18 |        150 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF-POC CompassDiscovery\src\setup.h                               | C++      |         42 |          5 |         27 |         74 |
+| Total                                                                                                                             |          |        695 |        157 |        179 |      1,031 |
++-----------------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+

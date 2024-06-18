@@ -1,0 +1,47 @@
+Date : 2024-05-17 18:39:53
+Directory : c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src
+Total : 14 files,  -96 codes, -7 comments, -20 blanks, all -123 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| C++      |         14 |        -96 |         -7 |        -20 |       -123 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++-----------------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                                                                | files      | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                                                                   |         14 |        -96 |         -7 |        -20 |       -123 |
+| . (Files)                                                                                                                                           |          2 |          5 |          0 |          1 |          6 |
+| moduleManager                                                                                                                                       |         12 |       -101 |         -7 |        -21 |       -129 |
+| moduleManager (Files)                                                                                                                               |          2 |        118 |         29 |         28 |        175 |
+| moduleManager\PuzzlePiece                                                                                                                           |          2 |        -73 |        -12 |        -13 |        -98 |
+| moduleManager\PuzzlePiece_Heart                                                                                                                     |          2 |        -54 |        -11 |        -13 |        -78 |
+| moduleManager\PuzzlePiece_Ledpipe                                                                                                                   |          2 |        -54 |        -11 |        -13 |        -78 |
+| moduleManager\connectedModule                                                                                                                       |          4 |        -38 |         -2 |        -10 |        -50 |
+| moduleManager\connectedModule (Files)                                                                                                               |          2 |         32 |          1 |          9 |         42 |
+| moduleManager\connectedModule\CompassConnector                                                                                                      |          2 |        -70 |         -3 |        -19 |        -92 |
++-----------------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-----------------------------------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                                                                                            | language | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\main.cpp                                                            | C++      |          1 |          0 |          0 |          1 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\moduleManager\PuzzlePiece\PuzzlePiece.cpp                           | C++      |        -51 |        -10 |         -9 |        -70 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\moduleManager\PuzzlePiece\PuzzlePiece.h                             | C++      |        -22 |         -2 |         -4 |        -28 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\moduleManager\PuzzlePiece_Heart\PuzzlePiece_heart.cpp               | C++      |        -37 |        -11 |         -8 |        -56 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\moduleManager\PuzzlePiece_Heart\PuzzlePiece_heart.h                 | C++      |        -17 |          0 |         -5 |        -22 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\moduleManager\PuzzlePiece_Ledpipe\PuzzlePiece_Ledpipe.cpp           | C++      |        -37 |        -11 |         -8 |        -56 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\moduleManager\PuzzlePiece_Ledpipe\PuzzlePiece_Ledpipe.h             | C++      |        -17 |          0 |         -5 |        -22 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\moduleManager\connectedModule\CompassConnector\CompassConnector.cpp | C++      |        -38 |         -3 |         -7 |        -48 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\moduleManager\connectedModule\CompassConnector\CompassConnector.h   | C++      |        -32 |          0 |        -12 |        -44 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\moduleManager\connectedModule\connectedModule.cpp                   | C++      |         18 |          1 |          6 |         25 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\moduleManager\connectedModule\connectedModule.h                     | C++      |         14 |          0 |          3 |         17 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\moduleManager\moduleManager.cpp                                     | C++      |         99 |         29 |         26 |        154 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\moduleManager\moduleManager.h                                       | C++      |         19 |          0 |          2 |         21 |
+| c:\Users\askbl\School\Fontys\Semester 6\GLOW\Codebase\GLOW-II\ROLF - Master\src\pipePieces.h                                                        | C++      |          4 |          0 |          1 |          5 |
+| Total                                                                                                                                               |          |        -96 |         -7 |        -20 |       -123 |
++-----------------------------------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
