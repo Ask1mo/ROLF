@@ -69,7 +69,6 @@
 
 
 /*---=== Trinity setup ===---*/
-#define PANELSETUP_VOICETUBE_PSV    //This is where you select the type of panel you're using. Old feature from Trinity
 #define PLATFORM_ESP32_WROOMDEVKIT  //This is where you select the type of platform you're using. Old feature from Trinity
 #define LEDTYPE_STANDARD            //This is where you select the type of LED strip you're using. Old feature from Trinity
 #define ENABLE_DIODECONTROL true    //This is where you select if you want to use individual diode control. Old feature from Trinity

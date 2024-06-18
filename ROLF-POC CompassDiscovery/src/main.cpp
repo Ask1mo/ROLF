@@ -63,7 +63,7 @@ void task_main( void *pvParameters ) //Multicore replacement for "loop()"
   //Setup
   Serial.println("----- ===== Task Main Setup Started ===== -----");
 
-  //Horn microphone //TODO: REMOVE OR REPLACE
+  //Horn noise level sensor //TODO: REMOVE OR REPLACE
   pinMode(PIN_MICROPHONE, INPUT);
 
   //Wifi
@@ -89,10 +89,8 @@ void task_main( void *pvParameters ) //Multicore replacement for "loop()"
   Serial.print("6 byte Mac adress string: ");
   Serial.println(sixByteMacString);
 
-  String dingus = sixCharMacToColonMac(sixByteMacString);
-  
 
-  Serial.println("Beepus");
+
   connectorManager = new ConnectorManager(sixByteMacString); //Use shortneded macadress
 
   //Setup end

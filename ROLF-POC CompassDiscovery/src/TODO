@@ -40,5 +40,10 @@ Fix:        Store led instructions in a buffer. Load instructions from this buff
             Pulldown time may not take longer than X ms.
 Note:       We already reserved pins for ledSync pulses. These are also found in the compassConnector class.
 
+Task:       Document pins on PCB
+Problem:    You can only see pin numbers on the PCB.
+Fix:        Add indicators on the pcb. N E S W U D, LedPin, NoiseSensor, 
+
+
 Task:       getter uniformity
 Problem:    In connec
