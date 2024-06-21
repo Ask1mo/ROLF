@@ -1,13 +1,13 @@
-#include "CommsConnector.h"
+#include "CompassConnector.h"
 
 //Private
-bool            CommsConnector::waitAndRead           (uint8_t *data)
+bool            CompassConnector::waitAndRead           (uint8_t *data)
 {
     *data = 0; //Set data to 0
 
     if (lineMode != LINEMODE_SERIAL_READ)
     {
-        Serial.println(F("Error: CommsConnector::waitndRead() called while not in read mode"));
+        Serial.println(F("Error: CompassConnector::waitndRead() called while not in read mode"));
         return false;
     }
     
@@ -25,13 +25,13 @@ bool            CommsConnector::waitAndRead           (uint8_t *data)
     *data = softwareSerial->read();
     return true;
 }
-void            CommsConnector::setLineMode           (uint8_t newLineMode)
+void            CompassConnector::setLineMode           (uint8_t newLineMode)
 {
     if (lineMode == newLineMode) return;
 
     if (lineMode == LINEMODE_BUSY && newLineMode != LINEMODE_IDLE)
     {
-        Serial.print(F("Error: CommsConnector::setLineMode() - Trying to change from busy to something other than idle: "));
+        Serial.print(F("Error: CompassConnector::setLineMode() - Trying to change from busy to something other than idle: "));
         Serial.println(newLineMode);
         return;
     }
@@ -101,7 +101,7 @@ void            CommsConnector::setLineMode           (uint8_t newLineMode)
     }
     lineMode = newLineMode;
 }
-void            CommsConnector::saveNeighborData      (String newNeighborMacAdress, uint8_t newNeighborDirection)
+void            CompassConnector::saveNeighborData      (String newNeighborMacAdress, uint8_t newNeighborDirection)
 {
     Serial.println(F("Saving neighbor data: "));
 
@@ -140,7 +140,7 @@ void            CommsConnector::saveNeighborData      (String newNeighborMacAdre
         Serial.println(directionToString(neighborDirection));
     }
 }
-void            CommsConnector::pinTransmitV2         (String data)// Replaces all the other outbound transissions
+void            CompassConnector::pinTransmitV2         (String data)// Replaces all the other outbound transissions
 {
     setLineMode(LINEMODE_PULLCLAIMED);
     delay(5); //REMOVE THIS DELAY
@@ -153,11 +153,11 @@ void            CommsConnector::pinTransmitV2         (String data)// Replaces a
     setLineMode(LINEMODE_IDLE);
 }
 //Constructor
-CommsConnector::CommsConnector                      (uint8_t pin_comms, uint8_t pin_ledSync, uint8_t direction, String macAdress)
+CompassConnector::CompassConnector                      (uint8_t pin_comms, uint8_t pin_ledSync, uint8_t direction, String macAdress)
 {
     if(DEBUGLEVEL >= DEBUG_OPERATIONS)
     {
-        Serial.print(F("Creating CommsConnector at adress "));
+        Serial.print(F("Creating CompassConnector at adress "));
         Serial.println((int)this, DEC);
     }
 
@@ -170,7 +170,7 @@ CommsConnector::CommsConnector                      (uint8_t pin_comms, uint8_t 
     setLineMode(LINEMODE_IDLE);
 }
 //Public
-void            CommsConnector::tick                  ()
+void            CompassConnector::tick                  ()
 {
     //Check if the connection is still alive. (AKA: Did we receive a pulse in the last X seconds? If not, say that we are disconnected.)
     if (lastMillis_PinTest + MAXINTERVALMILLIS_PINTEST < millis() && connectionState != NEIGH_CONNECTSTATE_DISCONNECTED)
@@ -178,13 +178,13 @@ void            CommsConnector::tick                  ()
         forgetNeighbor();
     }
 }
-uint8_t         CommsConnector::checkLineClaimed      ()
+uint8_t         CompassConnector::checkLineClaimed      ()
 {
     if (connectionState == NEIGH_CONNECTSTATE_BLOCKED) return false; //Early return if module is chosen to be unreliable
 
     if (lineMode == LINEMODE_BUSY) 
     {
-        Serial.println(F("Error: CommsConnector::checkLineClaimed() - Trying to check line while in busy mode"));
+        Serial.println(F("Error: CompassConnector::checkLineClaimed() - Trying to check line while in busy mode"));
         return false; //Early return if the module is  busy. Module should never be running code while busy.
     }
 
@@ -211,7 +211,7 @@ uint8_t         CommsConnector::checkLineClaimed      ()
     setLineMode(LINEMODE_IDLE);
     return identifier; //After the identier is read, the message will immediately follow (Blocking code until message is received.). This message will have to be read elsewhere.
 }
-void            CommsConnector::handlePinTest         ()
+void            CompassConnector::handlePinTest         ()
 {
     Serial.println(F("Pt"));
     lastMillis_PinTest = millis(); //Obsolete?
@@ -238,7 +238,7 @@ void            CommsConnector::handlePinTest         ()
     connectionState = NEIGH_CONNECTSTATE_CONNECTED;
     saveNeighborData(incomingPinTestData.substring(0, 6), (uint8_t)incomingPinTestData[6]);
 }
-Transmission    CommsConnector::handleMessageRead     ()
+Transmission    CompassConnector::handleMessageRead     ()
 {
     //Read transmission
     setLineMode(LINEMODE_SERIAL_READ);
@@ -270,7 +270,7 @@ Transmission    CommsConnector::handleMessageRead     ()
 
     return incomingTransmission;
 }
-void            CommsConnector::transmit_pinTest      ()
+void            CompassConnector::transmit_pinTest      ()
 {
     String data = "";
     data += char(TRANSMISSIONTYPE_PINTEST);
@@ -278,13 +278,13 @@ void            CommsConnector::transmit_pinTest      ()
     data += char(direction);
     pinTransmitV2(data);
 }
-void            CommsConnector::setBusy               (bool busy)
+void            CompassConnector::setBusy               (bool busy)
 {
     if (busy)
     {
         if (lineMode == LINEMODE_BUSY)
         {
-            Serial.println(F("Error: CommsConnector::setBusy() - Trying to set busy while it already was busy. This is not allowed"));
+            Serial.println(F("Error: CompassConnector::setBusy() - Trying to set busy while it already was busy. This is not allowed"));
         }
         else
         {
@@ -295,7 +295,7 @@ void            CommsConnector::setBusy               (bool busy)
     {
         if (lineMode != LINEMODE_BUSY)
         {
-            Serial.println(F("Error: CommsConnector::setBusy() - Trying to set not busy while it was not busy. This is not allowed"));
+            Serial.println(F("Error: CompassConnector::setBusy() - Trying to set not busy while it was not busy. This is not allowed"));
         }
         else
         {
@@ -303,7 +303,7 @@ void            CommsConnector::setBusy               (bool busy)
         }
     }
 }
-void            CommsConnector::forgetNeighbor        ()
+void            CompassConnector::forgetNeighbor        ()
 {
     //DOnt do anything if neighbor isnt there
     if (connectionState == NEIGH_CONNECTSTATE_DISCONNECTED || connectionState == NEIGH_CONNECTSTATE_UNKNOWN) return;
@@ -319,11 +319,11 @@ void            CommsConnector::forgetNeighbor        ()
     saveNeighborData(ADRESS_UNKNOWN, DIRECTION_NONE);
     connectionState = NEIGH_CONNECTSTATE_DISCONNECTED;
 }
-uint64_t        CommsConnector::getLastMillis_PinTest ()
+uint64_t        CompassConnector::getLastMillis_PinTest ()
 {
     return lastMillis_PinTest;
 }
-String          CommsConnector::getConnectionUpdate   ()
+String          CompassConnector::getConnectionUpdate   ()
 {
     if (updateCodes.size() == 0) return "";
     
@@ -331,15 +331,15 @@ String          CommsConnector::getConnectionUpdate   ()
     updateCodes.erase(updateCodes.begin());
     return updateCodeToSend;
 }
-String          CommsConnector::getNeighborMacAdress  ()
+String          CompassConnector::getNeighborMacAdress  ()
 {
     return neighborMacAdress;
 }
-uint8_t         CommsConnector::getDirection          ()
+uint8_t         CompassConnector::getDirection          ()
 {
     return direction;
 }
-void            CommsConnector::printConnector        ()
+void            CompassConnector::printConnector        ()
 {
     Serial.print(F("Connector: "));
     Serial.print(directionToString(direction));

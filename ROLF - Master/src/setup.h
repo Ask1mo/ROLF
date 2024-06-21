@@ -1,8 +1,7 @@
 #ifndef SETUP_H
 #define SETUP_H
 
-#include <Arduino.h>
-#include "dataTypes.h"
+#include "Data/globals.h"
 
 #define DEBUG_DISABLED              0
 #define DEBUG_ERRORS                1
@@ -13,20 +12,15 @@
 #define DEBUGLEVEL DEBUG_OPERATIONS
 
 
-#define PRESET_1_DEBUGCROSS         1
-#define PRESET_2_AllCross1          2
-#define PRESET_3_STRIJP_SINGLEPIPE  3
-#define PRESET_253_STRIJP_HORNWEIRD 253
-#define PRESET_254_STRIJP_HORNLONG  254
-#define PRESET_255_Horn             255
-
-
-
-
-
 #define BAUDRATE_MONITOR 115200
+#define BAUDRATE_SYSTEM 9600       //Module to module communcation speed for the system                                                         //TODO: update to 115200
+
 #define SSID "GLOWII"
 #define PASSWORD "AskimoGlow"
-#define SERVER_UDPPORT 4210  // local port to listen on
+
+#define PIN_COMMS 32
+#define PIN_LEDSYNC 19
+
+#define PIN_DEAD            12      //A pin needed to keep the serial communication half-duplex. The unused pins are assigned to this pin.
 
 #endif

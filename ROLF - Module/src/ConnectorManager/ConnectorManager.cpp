@@ -8,7 +8,7 @@ void                    ConnectorManager::parseTransmission (String message)
     if (message.startsWith(MESSAGETYPE_COCL_REQUESTTEMPLATE))
     {
         lastMessageID++;
-        retransmit(Transmission{"MASTER", lastMessageID, MESSAGETYPE_CLCO_NEWCLIENTTEMPLATE, macAdress + (char)SELECTEDPRESET, DIRECTION_NONE});
+        retransmit(Transmission{ADRESS_MASTER, lastMessageID, MESSAGETYPE_CLCO_NEWCLIENTTEMPLATE, macAdress + (char)SELECTEDPRESET, DIRECTION_NONE});
     }
 
     if (message.startsWith(MESSAGETYPE_COCL_UPDATEREQUEST))
@@ -90,7 +90,7 @@ ConnectorManager::ConnectorManager                          (String macAdress)
 
     String identMessage = macAdress + (char)SELECTEDPRESET;
     lastMessageID++;
-    retransmit(Transmission{"MASTER", lastMessageID, MESSAGETYPE_CLCO_NEWCLIENTTEMPLATE, identMessage, DIRECTION_NONE});
+    retransmit(Transmission{ADRESS_MASTER, lastMessageID, MESSAGETYPE_CLCO_NEWCLIENTTEMPLATE, identMessage, DIRECTION_NONE});
 }
 //Public
 void                    ConnectorManager::tick              ()
@@ -188,7 +188,7 @@ void                    ConnectorManager::tick              ()
 void                    ConnectorManager::transmit          (String messageType, String message)
 {
     lastMessageID++;
-    retransmit(Transmission{"MASTER", lastMessageID, messageType, message, DIRECTION_NONE});
+    retransmit(Transmission{ADRESS_MASTER, lastMessageID, messageType, message, DIRECTION_NONE});
 }
 std::vector<LedUpdate>  ConnectorManager::getLedUpdates     ()
 {

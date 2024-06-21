@@ -15,6 +15,7 @@
 #define NEIGH_CONNECTSTATE_BLOCKED              3 //This is selected from the master. Or manually. This is to block broken modules or otherwise unreliable connections. This is not implemented.
 
 #define ADRESS_UNKNOWN "000000"
+#define ADRESS_MASTER  "MASTER"
 
 #define TRANSMISSIONTYPE_BUSY           'B'//This char never gets transmitted or received. It is used to indicate that the neighbor is busy in other functions.
 #define TRANSMISSIONTYPE_PINTEST        'P' //Means a pintest transmission is coming

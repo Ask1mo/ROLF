@@ -1,58 +1,18 @@
 #include "connectedModule.h"
 
-String directionToString(uint8_t direction)
-{
-    switch (direction)
-    {
-        case DIRECTION_NONE:
-        return "None0 ";
-        case DIRECTION_NORTH:
-        return "North1";
-        case DIRECTION_EAST:
-        return "East2 ";
-        case DIRECTION_SOUTH:
-        return "South3";
-        case DIRECTION_WEST:
-        return "West4 ";
-        case DIRECTION_UP:
-        return "Up5   ";
-        case DIRECTION_DOWN:
-        return "Down6 ";
-        default:
-        return "DIRERR";
-    }
-}
-
 //Constructor
-ConnectedModule::ConnectedModule(String macAdress, String ipAdress, uint8_t moduleID, BaseInfo baseInfo)
+ConnectedModule::ConnectedModule(String macAdress, uint8_t temmplateID)
 {
     this->macAdress = macAdress;
-    this->ipAdress = ipAdress;
-    this->moduleID = moduleID;
-    this->baseInfo = baseInfo;
+    this->baseInfo = getBaseInfo(temmplateID);
     puzzlePlaced = false;
     //Todo: make this prettier.
-    compassConnectors[0] = {DIRECTION_NORTH, baseInfo.northPipeLength, baseInfo.northPipeDelay,    DIRECTION_NORTH,0, 0};
-    compassConnectors[1] = {DIRECTION_EAST,  baseInfo.eastPipeLength,  baseInfo.eastPipeDelay,    DIRECTION_EAST, 0, 0};
-    compassConnectors[2] = {DIRECTION_SOUTH, baseInfo.southPipeLength, baseInfo.southPipeDelay,    DIRECTION_SOUTH,0, 0};
-    compassConnectors[3] = {DIRECTION_WEST,  baseInfo.westPipeLength,  baseInfo.westPipeDelay,    DIRECTION_WEST, 0, 0};
+    compassConnectors[0] = {DIRECTION_NORTH, baseInfo.northPipeLength, baseInfo.northPipeDelay, DIRECTION_NORTH,0, 0};
+    compassConnectors[1] = {DIRECTION_EAST,  baseInfo.eastPipeLength,  baseInfo.eastPipeDelay,  DIRECTION_EAST, 0, 0};
+    compassConnectors[2] = {DIRECTION_SOUTH, baseInfo.southPipeLength, baseInfo.southPipeDelay, DIRECTION_SOUTH,0, 0};
+    compassConnectors[3] = {DIRECTION_WEST,  baseInfo.westPipeLength,  baseInfo.westPipeDelay,  DIRECTION_WEST, 0, 0};
     compassConnectors[4] = {DIRECTION_UP,    baseInfo.upPipeLength,    baseInfo.upPipeDelay,    DIRECTION_UP,   0, 0};
-    compassConnectors[5] = {DIRECTION_DOWN,  baseInfo.downPipeLength,  baseInfo.downPipeDelay,    DIRECTION_DOWN, 0, 0};
-
-}
-void ConnectedModule::setIpAdress(String ipAdress)
-{
-    this->ipAdress = ipAdress;
-}
-
-void ConnectedModule::updateIpAdress(String ipAdress)
-{
-    this->ipAdress = ipAdress;
-}
-
-uint8_t ConnectedModule::getModuleID()
-{
-    return this->moduleID;
+    compassConnectors[5] = {DIRECTION_DOWN,  baseInfo.downPipeLength,  baseInfo.downPipeDelay,  DIRECTION_DOWN, 0, 0};
 }
 
 String ConnectedModule::getMacAdress()
@@ -60,19 +20,14 @@ String ConnectedModule::getMacAdress()
     return this->macAdress;
 }
 
-String ConnectedModule::getIpAdress()
-{
-    return this->ipAdress;
-}
-
-void ConnectedModule::updateConnection(uint8_t direction, uint8_t neighborID, uint8_t neighborDirection)
+void ConnectedModule::updateConnection(uint8_t direction, String neighborMac, uint8_t neighborDirection)
 {
     if (direction >= DIRECTIONS || direction == 0 || neighborDirection >= DIRECTIONS)
     {
         Serial.println("ConnectedModule::updateConnection: Invalid direction");
         return;
     }
-    compassConnectors[direction-1].neighborAdress = neighborID;
+    compassConnectors[direction-1].neighborMac = neighborMac;
     compassConnectors[direction-1].neighborDirection = neighborDirection;
 }
 
@@ -91,11 +46,11 @@ BaseInfo ConnectedModule::getBaseInfo()
     return baseInfo;
 }
 
-bool ConnectedModule::checkHasNeighbor(uint8_t neighborID)
+bool ConnectedModule::checkHasNeighbor(String neighborMac)
 {
     for (uint8_t i = 0; i < DIRECTIONS; i++)
     {
-        if (compassConnectors[i].neighborAdress == neighborID)
+        if (compassConnectors[i].neighborAdress == neighborMac)
         {
             //Serial.print("ConnectedModule::checkHasNeighbor: Neighbor found with ID ");
           //  Serial.println(neighborID);
@@ -109,15 +64,6 @@ bool ConnectedModule::checkHasNeighbor(uint8_t neighborID)
 }
 
 
-/*CompassConnector ConnectedModule::getConnectorInfo(uint8_t direction)
-{
-    if (direction >= DIRECTIONS)
-    {
-        Serial.println("ConnectedModule::getConnectorInfo: Invalid direction");
-        return {0, 0, 0, 0};
-    }
-    return compassConnectors[direction];
-}*/
 CompassConnector ConnectedModule::getConnectorFromCompensatedDirection(uint8_t compensatedDirection)
 {
     if (compensatedDirection > DIRECTIONS)

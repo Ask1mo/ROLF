@@ -15,6 +15,7 @@
 #define NEIGH_CONNECTSTATE_BLOCKED              3 //This is selected from the master. Or manually. This is to block broken modules or otherwise unreliable connections. This is not implemented.
 
 #define ADRESS_UNKNOWN "000000"
+#define ADRESS_MASTER  "MASTER"
 
 #define TRANSMISSIONTYPE_BUSY           'B'//This char never gets transmitted or received. It is used to indicate that the neighbor is busy in other functions.
 #define TRANSMISSIONTYPE_PINTEST        'P' //Means a pintest transmission is coming
@@ -29,7 +30,7 @@
 #define MESSAGELENGTH_PINTEST 7 //Test to see if a transmission was the correct length to be a pintest transmission
 
 
-class CommsConnector
+class CompassConnector
 {
 private:
 //Static
@@ -57,7 +58,7 @@ private:
     void          pinTransmitV2         (String data);          //Transmit DATA over the comms pin. Only one to do so.
 public:
 //Constructor
-    CommsConnector                    (uint8_t pin_comms, uint8_t pin_ledSync, uint8_t direction, String macAdress);
+    CompassConnector                    (uint8_t pin_comms, uint8_t pin_ledSync, uint8_t direction, String macAdress);
 //Loop
     void          tick                  (); //Loop
 //Transmissions

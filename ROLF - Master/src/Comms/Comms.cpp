@@ -2,7 +2,7 @@
 
 Comms::Comms()
 {
-    
+  connector = new CompassConnector(PIN_COMMS, PIN_LEDSYNC, DIRECTION_NORTH, ADRESS_MASTER);
 }
 
 void    Comms::reboot(String message)
@@ -23,15 +23,32 @@ void                    Comms::parseTransmission (String message)
     Serial.print("Parsing message: ");
     Serial.println(message);
 
-    if (message.startsWith(MESSAGETYPE_COCL_REQUESTTEMPLATE))
+    if (message.startsWith(MESSAGETYPE_CLCO_NEWCLIENTTEMPLATE)) //Contains 6 byte mac + TemplateID
     {
-        lastMessageID++;
-        retransmit(Transmission{"MASTER", lastMessageID, MESSAGETYPE_CLCO_NEWCLIENTTEMPLATE, macAdress + (char)SELECTEDPRESET, DIRECTION_NONE});
+      NewClientInfo newClientInfo;
+      newClientInfo.macAdress = message.substring(5, 22); //Incorrect. 6 byte not: whatever this is.
+      newClientInfo.templateID = (uint8_t)message[22];
+
+      Serial.print("New client: ");
+      Serial.print(newClientInfo.macAdress);
+      Serial.print(" with templateID: ");
+      Serial.println(newClientInfo.templateID);
+      
+
+      newClientBuffer.push_back(newClientInfo);
     }
 
-    if (message.startsWith(MESSAGETYPE_COCL_UPDATEREQUEST))
+    if (message.startsWith(MESSAGETYPE_CLCO_CONNECTIONCHANGED)) 
     {
-      Serial.println("Update requested, not implemented");
+      //Original code: String(char(moduleAdress)+ char(direction) + char(neighborAdress) + char(neighborDirection)
+
+      ModuleChangeInfo moduleChangeInfo;
+      moduleChangeInfo.moduleID =           (uint8_t)message[5];
+      moduleChangeInfo.direction =          (uint8_t)message[6];
+      moduleChangeInfo.neighborID =         (uint8_t)message[7];
+      moduleChangeInfo.neighborDirection =  (uint8_t)message[8]; 
+
+      moduleChangeBuffer.push_back(moduleChangeInfo);
     }
 
     if (message.startsWith(MESSAGETYPE_COCL_NEWEFFECT))
@@ -54,46 +71,10 @@ void                    Comms::parseTransmission (String message)
       Serial.print(", Delay Offset: ");
       Serial.println(delayOffset);  
     }
-}
 
-void    Comms::receiveAndParse()
-{
-    if (message.startsWith(MESSAGE_CLCO_NEWCLIENTFULL))//Message contains 8 pieces of data: macAdress, heartPiece, n, e, s, w, u, d
+    if (message.startsWith(MESSAGETYPE_HOCO_HORNTRIGGERED))
     {
-      Serial.println("New client full message received. Not implemented");
-    }
-    if (message.startsWith(MESSAGE_CLCO_NEWCLIENTTEMPLATE))//Message contains 8 pieces of data: macAdress, heartPiece, n, e, s, w, u, d
-    {
-      NewClientInfo newClientInfo;
-      newClientInfo.macAdress = message.substring(5, 22);
-      newClientInfo.ipAdress = udp.remoteIP().toString();
-      newClientInfo.templateID = (uint8_t)message[22];
-
-      Serial.print("New client: ");
-      Serial.print(newClientInfo.macAdress);
-      Serial.print(" with templateID: ");
-      Serial.println(newClientInfo.templateID);
-      
-
-      newClientBuffer.push_back(newClientInfo);
-    }
-
-    if (message.startsWith(MESSAGE_CLCO_CONNECTIONCHANGED)) 
-    {
-      //Original code: String(char(moduleAdress)+ char(direction) + char(neighborAdress) + char(neighborDirection)
-
-      ModuleChangeInfo moduleChangeInfo;
-      moduleChangeInfo.moduleID =           (uint8_t)message[5];
-      moduleChangeInfo.direction =          (uint8_t)message[6];
-      moduleChangeInfo.neighborID =         (uint8_t)message[7];
-      moduleChangeInfo.neighborDirection =  (uint8_t)message[8]; 
-
-      moduleChangeBuffer.push_back(moduleChangeInfo);
-    }
-
-    if (message.startsWith(MESSAGE_HOCO_HORNTRIGGERED))
-    {
-      uint8_t moduleID = (uint8_t)message[5];
+      String macAdress = (uint8_t)message[5];
 
       Serial.print("Horn ");
       Serial.print(moduleID);
@@ -106,9 +87,9 @@ void    Comms::receiveAndParse()
     {
       transmit(MESSAGE_DUPL_SESSIONCHECK + String(sessionID), udp.remoteIP().toString());
     }
-    // Add else if conditions here for other codephrases
-  }
 }
+
+
 void    Comms::connect()
 {
   Serial.println("(Re)Connecting to WiFi");

@@ -7,7 +7,7 @@
 #include <WiFiUdp.h>
 #include "setup.h"
 
-#include "Connector/CommsConnector.h"
+#include "CompassConnector/CompassConnector.h"
 
 
 
@@ -30,9 +30,12 @@ private:
     WiFiUDP udp;
     uint8_t sessionID = 0;
     uint64_t lastMillis_SessionCheck = 0;
+    CompassConnector *connector;
     std::vector<ModuleChangeInfo> moduleChangeBuffer;
     std::vector<NewClientInfo> newClientBuffer;
     std::vector<uint8_t> triggeredHornsIDs;
+
+    uint8_t lastMessageID = 0;
     void reboot(String message);
     
     void receiveAndParse();
