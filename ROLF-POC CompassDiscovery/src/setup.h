@@ -17,7 +17,7 @@
 //Wifi & UDP
 #define WIFI_SSID "GLOWII"               //Wifi name
 #define PASSWORD "AskimoGlow"       //Password,                                                                                                 //TODO: needs changing
-#define SERVER_IP "192.168.137.112" //Should be Static IP of the master
+#define SERVER_IP "192.168.137.164" //Should be Static IP of the master
 //Wifi & UDP
 
 //UART
@@ -53,7 +53,7 @@
 //Pipe_Delay is to define the delay of the leds (How long does it take for the leds to through the pipe piece) 
 #define XFACTOR 20 //Standardised delay factor for standard length pipe pieces
 
-#define SELECTEDPRESET PRESET_255_Horn //This is where you select the type15 of pipe you're using
+#define SELECTEDPRESET PRESET_3_STRIJP_SINGLEPIPE //This is where you select the type15 of pipe you're using
 #define PRESET_1_DEBUGCROSS         1
 #define PRESET_2_AllCross1          2
 #define PRESET_3_STRIJP_SINGLEPIPE  3
