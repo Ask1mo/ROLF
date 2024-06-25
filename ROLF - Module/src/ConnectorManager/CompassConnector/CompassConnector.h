@@ -5,7 +5,7 @@
 #include "setup.h"
 #include "SoftwareSerial.h"
 
-#define SOFTSERIALTIMOUTTIME 10             //Time to wait for new characters before assuming the transmission timed out. Used in waitAndRead()
+#define SOFTSERIALTIMOUTTIME 100             //Time to wait for new characters before assuming the transmission timed out. Used in waitAndRead()
 #define MAXINTERVALMILLIS_PINTEST 10000     // If no new pintest is successful in x millis. It is assumed the neighbor is gone.
 #define CHARFREETIME 15                     //Time to wait for a new char to arrive before assuming the transmission is done. Only used in checkLineClaimed to wait for a bad transmission to finish.
 
@@ -20,6 +20,7 @@
 #define TRANSMISSIONTYPE_BUSY           'B'//This char never gets transmitted or received. It is used to indicate that the neighbor is busy in other functions.
 #define TRANSMISSIONTYPE_PINTEST        'P' //Means a pintest transmission is coming
 #define TRANSMISSIONTYPE_MESSAGE        'M' //Means a message transmission is coming
+#define TRANSMISSIONTYPE_ACK            'A' //Means an update transmission is coming
 
 #define LINEMODE_IDLE         0 //DigialReading for neighbor to claim the line
 #define LINEMODE_PULLCLAIMED  1 //Claiming the line low in preparation for sending a transmission

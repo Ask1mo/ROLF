@@ -92,8 +92,6 @@ void            CompassConnector::setLineMode           (uint8_t newLineMode)
                 softwareSerial->end();
                 delete softwareSerial;
             }
-            pinMode(pin_comms, OUTPUT);     //Dunno if this is a good idea
-            digitalWrite(pin_comms, LOW);   //Dunno if this is a good idea
             softwareSerial = new EspSoftwareSerial::UART();
             softwareSerial->begin(BAUDRATE_SYSTEM, EspSoftwareSerial::SWSERIAL_8N2, PIN_DEAD, pin_comms, false, 256);
         }
@@ -143,12 +141,13 @@ void            CompassConnector::saveNeighborData      (String newNeighborMacAd
 void            CompassConnector::pinTransmitV2         (String data)// Replaces all the other outbound transissions
 {
     setLineMode(LINEMODE_PULLCLAIMED);
-    delay(5); //REMOVE THIS DELAY
+    delay(SOFTSERIALTIMOUTTIME/3); //REMOVE THIS DELAY
     setLineMode(LINEMODE_SERIAL_WRITE);
     for (int i = 0; i < data.length(); i++)
     {
+        delay(SOFTSERIALTIMOUTTIME/3); //Extra delay for stability during debugging. (Remove this delay)
         softwareSerial->write(data[i]);
-        delay(5); //Extra delay for stability during debugging. (Remove this delay)
+        
     }
     setLineMode(LINEMODE_IDLE);
 }
