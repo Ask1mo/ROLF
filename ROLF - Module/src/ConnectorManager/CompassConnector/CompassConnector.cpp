@@ -12,22 +12,37 @@ bool            CompassConnector::waitAndRead           (uint8_t *data)
     }
     
     uint64_t lastMillis_ReadStart = millis();
+    Serial.print(F("Waiting for data - "));
+    printEpochMillie();
 
     while (!softwareSerial->available())
     {
         if (millis() - lastMillis_ReadStart > SOFTSERIALTIMOUTTIME)
         {
-            Serial.println(F("Timeout"));
+            Serial.print(F("Timeout: "));
+            printEpochMillie();
             return false;
         }
     }
 
     *data = softwareSerial->read();
+    Serial.print(F("Received:   '"));
+    Serial.print(*data, HEX);
+    Serial.print("' - ");
+    printEpochMillie();
     return true;
 }
 void            CompassConnector::setLineMode           (uint8_t newLineMode)
 {
     if (lineMode == newLineMode) return;
+
+/*
+    if (newLineMode == LINEMODE_SERIAL_READ || newLineMode == LINEMODE_SERIAL_WRITE)
+    {
+        setTransmissionEpoch();
+    }
+    */
+    
 
     if (lineMode == LINEMODE_BUSY && newLineMode != LINEMODE_IDLE)
     {
@@ -45,6 +60,8 @@ void            CompassConnector::setLineMode           (uint8_t newLineMode)
                 softwareSerial->end();
                 delete softwareSerial;
             }
+            Serial.print(F("LINEMODE_IDLE - "));
+            printEpochMillie();
             pinMode(pin_comms, INPUT_PULLUP);
         }
         break;
@@ -56,6 +73,9 @@ void            CompassConnector::setLineMode           (uint8_t newLineMode)
                 softwareSerial->end();
                 delete softwareSerial;
             }
+
+            Serial.print(F("LINEMODE_PULLCLAIMED - "));
+            printEpochMillie();
             pinMode(pin_comms, OUTPUT);
             digitalWrite(pin_comms, LOW);
         }
@@ -68,6 +88,9 @@ void            CompassConnector::setLineMode           (uint8_t newLineMode)
                 softwareSerial->end();
                 delete softwareSerial;
             }
+
+            Serial.print(F("LINEMODE_BUSY - "));
+            printEpochMillie();
             pinMode(pin_comms, OUTPUT);
             digitalWrite(pin_comms, HIGH);
         }
@@ -80,8 +103,11 @@ void            CompassConnector::setLineMode           (uint8_t newLineMode)
                 softwareSerial->end();
                 delete softwareSerial;
             }
+
+            Serial.print(F("LINEMODE_SERIAL_READ - "));
+            printEpochMillie();
             softwareSerial = new EspSoftwareSerial::UART();
-            softwareSerial->begin(BAUDRATE_SYSTEM, EspSoftwareSerial::SWSERIAL_8N2, pin_comms, PIN_DEAD, false, 256);
+            softwareSerial->begin(BAUDRATE_SYSTEM, SERIALMODE, pin_comms, PIN_DEAD, false, 256);
         }
         break;
 
@@ -92,8 +118,11 @@ void            CompassConnector::setLineMode           (uint8_t newLineMode)
                 softwareSerial->end();
                 delete softwareSerial;
             }
+
+            Serial.print(F("LINEMODE_SERIAL_WRITE - "));
+            printEpochMillie();
             softwareSerial = new EspSoftwareSerial::UART();
-            softwareSerial->begin(BAUDRATE_SYSTEM, EspSoftwareSerial::SWSERIAL_8N2, PIN_DEAD, pin_comms, false, 256);
+            softwareSerial->begin(BAUDRATE_SYSTEM, SERIALMODE, PIN_DEAD, pin_comms, false, 256);
         }
         break;
     }
@@ -140,14 +169,19 @@ void            CompassConnector::saveNeighborData      (String newNeighborMacAd
 }
 void            CompassConnector::pinTransmitV2         (String data)// Replaces all the other outbound transissions
 {
+    Serial.println(F("Transmitting"));
+    setTransmissionEpoch();
     setLineMode(LINEMODE_PULLCLAIMED);
     delay(SOFTSERIALTIMOUTTIME/3); //REMOVE THIS DELAY
     setLineMode(LINEMODE_SERIAL_WRITE);
     for (int i = 0; i < data.length(); i++)
     {
-        delay(SOFTSERIALTIMOUTTIME/3); //Extra delay for stability during debugging. (Remove this delay)
         softwareSerial->write(data[i]);
-        
+        Serial.print(F("Sending: '"));
+        Serial.print(data[i], HEX);
+        Serial.print(F("' - "));
+        printEpochMillie();
+        delay(SOFTSERIALTIMOUTTIME/3); //Extra delay for stability during debugging. (Remove this delay)
     }
     setLineMode(LINEMODE_IDLE);
 }
@@ -198,6 +232,7 @@ uint8_t         CompassConnector::checkLineClaimed      ()
     if (!lineClaimed) return false; //If line is not claimed. Return false. No new transmissions are to be expected.
 
     //If this code is reached the line has been newly claimed. Figure out what kind of transmission is to be expected.
+    setTransmissionEpoch();
     setLineMode(LINEMODE_SERIAL_READ);
     
     uint8_t identifier = 0;
@@ -358,4 +393,17 @@ void            CompassConnector::printConnector        ()
         Serial.println(connectionState);
     }
 
+}
+
+//Debug
+void            CompassConnector::setTransmissionEpoch  ()
+{
+    lastMillis_transmissionEpoch = millis();
+    Serial.println(F("Epoch set"));
+}
+
+void            CompassConnector::printEpochMillie()
+{
+    Serial.print(millis() - lastMillis_transmissionEpoch);
+    Serial.println(F("ms"));
 }

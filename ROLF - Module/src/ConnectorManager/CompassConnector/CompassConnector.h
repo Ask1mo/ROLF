@@ -5,7 +5,7 @@
 #include "setup.h"
 #include "SoftwareSerial.h"
 
-#define SOFTSERIALTIMOUTTIME 100             //Time to wait for new characters before assuming the transmission timed out. Used in waitAndRead()
+#define SOFTSERIALTIMOUTTIME 30             //Time to wait for new characters before assuming the transmission timed out. Used in waitAndRead()
 #define MAXINTERVALMILLIS_PINTEST 10000     // If no new pintest is successful in x millis. It is assumed the neighbor is gone.
 #define CHARFREETIME 15                     //Time to wait for a new char to arrive before assuming the transmission is done. Only used in checkLineClaimed to wait for a bad transmission to finish.
 
@@ -30,6 +30,7 @@
 
 #define MESSAGELENGTH_PINTEST 7 //Test to see if a transmission was the correct length to be a pintest transmission
 
+#define SERIALMODE EspSoftwareSerial::SWSERIAL_8N1 //Serial mode for the software serial
 
 class CompassConnector
 {
@@ -52,6 +53,11 @@ private:
 //Misc
     uint64_t                lastMillis_PinTest      = 0;                            //Last time a pinTest was succesfully received
     EspSoftwareSerial::UART *softwareSerial;                                        //Software serial object
+
+//debug
+    uint64_t                lastMillis_transmissionEpoch = 0;                            //Last time a transmission was received
+    void          setTransmissionEpoch(); //Set the epoch for the transmission
+    void          printEpochMillie(); //Get the epoch for the transmission
 //Transmissions
     bool          waitAndRead           (uint8_t *data);        //Returns false if unsuccessful (timout)
     void          setLineMode           (uint8_t lineMode);     //Manages: Claiming line. Releasing line. Setting line to busy. Setting line to read/write
